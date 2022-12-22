@@ -28,7 +28,7 @@ jobs:
         uses: borales/actions-yarn@v4
         with:
           cmd: install # will run `yarn install` command
-      - name: Test the app
+      - name: Run test
         uses: borales/actions-yarn@v4
         with:
           cmd: test:gas # will run `yarn test:gas` command

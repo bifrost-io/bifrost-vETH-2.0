@@ -9,7 +9,7 @@ const accounts = [process.env.PRIVATE_KEY as string]
 const config: HardhatUserConfig = {
   defaultNetwork: 'hardhat',
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: process.env.ETHERSCAN_API_KEY || '0000000000000000000000000000000000000000000000000000000000000000',
   },
   namedAccounts: {
     deployer: {
