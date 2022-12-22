@@ -1,13 +1,13 @@
-import {HardhatUserConfig} from "hardhat/config"
-import "@nomicfoundation/hardhat-toolbox"
-import "hardhat-contract-sizer"
-import "hardhat-deploy"
-import "dotenv/config"
+import { HardhatUserConfig } from 'hardhat/config'
+import '@nomicfoundation/hardhat-toolbox'
+import 'hardhat-contract-sizer'
+import 'hardhat-deploy'
+import 'dotenv/config'
 
 const accounts = [process.env.PRIVATE_KEY as string]
 
 const config: HardhatUserConfig = {
-  defaultNetwork: "hardhat",
+  defaultNetwork: 'hardhat',
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
   },
@@ -19,7 +19,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        enabled: process.env.FORKING === "true",
+        enabled: process.env.FORKING === 'true',
         url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       },
     },
@@ -35,7 +35,7 @@ const config: HardhatUserConfig = {
     },
   },
   solidity: {
-    version: "0.8.17",
+    version: '0.8.17',
     settings: {
       optimizer: {
         enabled: true,
