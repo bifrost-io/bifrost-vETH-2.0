@@ -32,7 +32,7 @@ contract vETH2 is ERC20Pausable, Ownable {
     }
 
     function transferFrom(address sender, address recipient, uint256 amount) public override returns (bool) {
-        require(!super.paused(), "vETH: transfer while paused");
+        require(!super.paused(), "vETH: transferFrom while paused");
         return super.transferFrom(sender, recipient, amount);
     }
 }
