@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract vETH2 is ERC20Pausable, Ownable {
-    constructor() public ERC20("Voucher Ethereum 2.0", "vETH2") Pausable() Ownable() {}
+    constructor() ERC20("Voucher Ethereum 2.0", "vETH2") Pausable() Ownable() {}
 
     function mint(address account, uint amount) external onlyOwner {
         super._mint(account, amount);
