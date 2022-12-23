@@ -3,11 +3,10 @@
   "plugins": ["prettier"],
   "rules": {
     "compiler-version": "off",
-    "contract-name-camelcase": "off",
-    "func-name-mixedcase": "off",
-    "func-visibility": ["warn",{"ignoreConstructors":true}],
-    "no-empty-blocks": "off",
-    "var-name-mixedcase": "off",
+    "func-visibility": ["warn", { "ignoreConstructors": true }],
+    "max-states-count": ["error", 18],
+    "max-line-length": ["warn", 120],
+    "quotes": ["warn", "double"],
     "prettier/prettier": "error"
   }
 }
