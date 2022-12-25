@@ -73,6 +73,6 @@ describe('Claim', function () {
 
   it('claim with wrong proof should be revert', async function () {
     const amount = ethers.utils.parseEther('10')
-    await expect(claim.connect(receiver).claim(amount, [])).to.revertedWith('Invalid proof')
+    await expect(claim.connect(receiver).claim(amount, [])).to.revertedWith('Merkle proof verification failed')
   })
 })

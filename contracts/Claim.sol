@@ -35,7 +35,7 @@ contract Claim is OwnableUpgradeable {
         claimed[msg.sender] = true;
 
         bytes32 leaf = keccak256(abi.encode(msg.sender, amount));
-        require(MerkleProofUpgradeable.verify(proof, merkleRoot, leaf), "Invalid proof");
+        require(MerkleProofUpgradeable.verify(proof, merkleRoot, leaf), "Merkle proof verification failed");
 
         IERC20Upgradeable(vETH2).transfer(msg.sender, amount);
 
