@@ -16,6 +16,9 @@
     "lint:solidity": "solhint 'contracts/**/*.sol'",
     "lint:fix": "prettier --write deploy/*.ts test/*.ts hardhat.config.ts"
   },
+  "engines": {
+    "node": "^18"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^1.0.4",
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
