@@ -4,7 +4,7 @@ import { Contract } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import crypto from 'crypto'
 import { MerkleTree } from 'merkletreejs'
-import depositData from './deposit_data.json'
+import depositData from './data/deposit_data.json'
 
 describe('SLPDeposit', function () {
   let depositContract: Contract
