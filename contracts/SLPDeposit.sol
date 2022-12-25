@@ -31,6 +31,7 @@ contract SLPDeposit is OwnableUpgradeable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
+    // solhint-disable-next-line no-empty-blocks
     function depositETH() external payable {}
 
     function batchDeposit(
