@@ -3,7 +3,7 @@ import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers } from 'hardhat'
 
 const deployFunction: DeployFunction = async function ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) {
-  console.log('Running Claim deploy script')
+  console.log('Running vETH2Claim deploy script')
 
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
@@ -11,7 +11,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const vETH2 = (await deployments.get('vETH2')).address
   const merkleRoot = ethers.constants.HashZero
 
-  const { address } = await deploy('Claim', {
+  const { address } = await deploy('vETH2Claim', {
     from: deployer,
     log: true,
     deterministicDeployment: false,
@@ -26,11 +26,11 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
     },
   })
 
-  console.log('Claim deployed at', address)
+  console.log('vETH2Claim deployed at', address)
 }
 
 export default deployFunction
 
 deployFunction.dependencies = ['vETH2']
 
-deployFunction.tags = ['Claim']
+deployFunction.tags = ['vETH2Claim']

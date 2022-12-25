@@ -4,8 +4,8 @@ import { Contract } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { MerkleTree } from 'merkletreejs'
 
-describe('Claim', function () {
-  let claim: Contract
+describe('vETH2Claim', function () {
+  let vETH2Claim: Contract
   let vETH2: Contract
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
@@ -32,47 +32,47 @@ describe('Claim', function () {
   })
 
   beforeEach(async function () {
-    const Claim = await ethers.getContractFactory('Claim')
+    const VETH2Claim = await ethers.getContractFactory('vETH2Claim')
     const VETH2 = await ethers.getContractFactory('vETH2')
-    claim = await Claim.deploy()
+    vETH2Claim = await VETH2Claim.deploy()
     vETH2 = await VETH2.deploy()
 
-    await claim.initialize(vETH2.address, merkleRoot)
-    await vETH2.mint(claim.address, ethers.utils.parseEther('10'))
+    await vETH2Claim.initialize(vETH2.address, merkleRoot)
+    await vETH2.mint(vETH2Claim.address, ethers.utils.parseEther('10'))
   })
 
   it('basic check', async function () {
-    expect(await claim.vETH2()).to.equal(vETH2.address)
-    expect(await claim.merkleRoot()).to.equal(merkleRoot)
-    expect(await vETH2.balanceOf(claim.address)).to.equal(ethers.utils.parseEther('10'))
+    expect(await vETH2Claim.vETH2()).to.equal(vETH2.address)
+    expect(await vETH2Claim.merkleRoot()).to.equal(merkleRoot)
+    expect(await vETH2.balanceOf(vETH2Claim.address)).to.equal(ethers.utils.parseEther('10'))
     expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('10'))
   })
 
   it('transfer owner should be ok', async function () {
-    await claim.transferOwnership(newOwner.address)
-    expect(await claim.owner()).to.equal(newOwner.address)
+    await vETH2Claim.transferOwnership(newOwner.address)
+    expect(await vETH2Claim.owner()).to.equal(newOwner.address)
   })
 
   it('claim should be ok', async function () {
     const amount = ethers.utils.parseEther('1')
-    expect(await claim.claimed(receiver.address)).to.equal(false)
-    await expect(claim.connect(receiver).claim(amount, proof))
-      .to.emit(claim, 'Claimed')
+    expect(await vETH2Claim.claimed(receiver.address)).to.equal(false)
+    await expect(vETH2Claim.connect(receiver).claim(amount, proof))
+      .to.emit(vETH2Claim, 'Claimed')
       .withArgs(receiver.address, amount)
     expect(await vETH2.balanceOf(receiver.address)).to.equal(amount)
-    expect(await claim.claimed(receiver.address)).to.equal(true)
+    expect(await vETH2Claim.claimed(receiver.address)).to.equal(true)
   })
 
   it('re-claim should be revert', async function () {
     const amount = ethers.utils.parseEther('1')
-    await expect(claim.connect(receiver).claim(amount, proof))
-      .to.emit(claim, 'Claimed')
+    await expect(vETH2Claim.connect(receiver).claim(amount, proof))
+      .to.emit(vETH2Claim, 'Claimed')
       .withArgs(receiver.address, amount)
-    await expect(claim.connect(receiver).claim(amount, proof)).to.revertedWith('Claimed')
+    await expect(vETH2Claim.connect(receiver).claim(amount, proof)).to.revertedWith('Claimed')
   })
 
   it('claim with wrong proof should be revert', async function () {
     const amount = ethers.utils.parseEther('10')
-    await expect(claim.connect(receiver).claim(amount, [])).to.revertedWith('Merkle proof verification failed')
+    await expect(vETH2Claim.connect(receiver).claim(amount, [])).to.revertedWith('Merkle proof verification failed')
   })
 })

@@ -8,7 +8,8 @@ import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgrad
 import "./interfaces/IVETH.sol";
 import "./interfaces/IDepositContract.sol";
 
-contract Claim is OwnableUpgradeable {
+// solhint-disable-next-line contract-name-camelcase
+contract vETH2Claim is OwnableUpgradeable {
     /* ========== STATE VARIABLES ========== */
 
     address public vETH2;
