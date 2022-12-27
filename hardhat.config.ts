@@ -1,8 +1,10 @@
 import { HardhatUserConfig } from 'hardhat/config'
 import '@nomicfoundation/hardhat-toolbox'
+import '@nomiclabs/hardhat-ethers'
 import 'hardhat-contract-sizer'
 import 'hardhat-deploy'
 import 'dotenv/config'
+import './tasks'
 
 const accounts = [process.env.PRIVATE_KEY as string]
 
