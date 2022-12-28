@@ -23,7 +23,7 @@ describe('vETH2Claim', function () {
     addressList.splice(0, 0, receiver.address)
     const leaves = addressList.map((addr) =>
       ethers.utils.keccak256(
-        ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256'], [addr, ethers.utils.parseEther('1')])
+        ethers.utils.defaultAbiCoder.encode(['address', 'uint256'], [addr, ethers.utils.parseEther('1')])
       )
     )
     const tree = new MerkleTree(leaves, ethers.utils.keccak256, { sortPairs: true })
