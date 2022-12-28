@@ -20,7 +20,7 @@ contract vETH2Claim is OwnableUpgradeable {
 
     /* ========== EVENTS ========== */
 
-    event Claimed(address indexed sender, uint256 amount);
+    event Claimed(address indexed sender, address target, uint256 amount);
 
     function initialize(address _vETH2, bytes32 _merkleRoot) public initializer {
         super.__Ownable_init();
@@ -31,15 +31,15 @@ contract vETH2Claim is OwnableUpgradeable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function claim(uint256 amount, bytes32[] memory proof) external {
-        require(!claimed[msg.sender], "Claimed");
-        claimed[msg.sender] = true;
+    function claim(address target, uint256 amount, bytes32[] memory proof) external {
+        require(!claimed[target], "Claimed");
+        claimed[target] = true;
 
-        bytes32 leaf = keccak256(abi.encode(msg.sender, amount));
+        bytes32 leaf = keccak256(abi.encode(target, amount));
         require(MerkleProofUpgradeable.verify(proof, merkleRoot, leaf), "Merkle proof verification failed");
 
-        IERC20Upgradeable(vETH2).transfer(msg.sender, amount);
+        IERC20Upgradeable(vETH2).transfer(target, amount);
 
-        emit Claimed(msg.sender, amount);
+        emit Claimed(msg.sender, target, amount);
     }
 }

@@ -10,11 +10,13 @@ describe('vETH2Claim', function () {
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
   let receiver: SignerWithAddress
+  let invalidReceiver: SignerWithAddress
+  let otherUser: SignerWithAddress
   let merkleRoot: string
   let proof: string[]
 
   before(async function () {
-    ;[deployer, newOwner, receiver] = await ethers.getSigners()
+    ;[deployer, newOwner, receiver, invalidReceiver, otherUser] = await ethers.getSigners()
 
     const addressList = []
     for (let i = 0; i < 100; i++) {
@@ -53,26 +55,47 @@ describe('vETH2Claim', function () {
     expect(await vETH2Claim.owner()).to.equal(newOwner.address)
   })
 
-  it('claim should be ok', async function () {
+  it('claim by self should be ok', async function () {
     const amount = ethers.utils.parseEther('1')
     expect(await vETH2Claim.claimed(receiver.address)).to.equal(false)
-    await expect(vETH2Claim.connect(receiver).claim(amount, proof))
+    await expect(vETH2Claim.connect(receiver).claim(receiver.address, amount, proof))
       .to.emit(vETH2Claim, 'Claimed')
-      .withArgs(receiver.address, amount)
+      .withArgs(receiver.address, receiver.address, amount)
     expect(await vETH2.balanceOf(receiver.address)).to.equal(amount)
+    expect(await vETH2.balanceOf(vETH2Claim.address)).to.equal(ethers.utils.parseEther('9'))
+    expect(await vETH2Claim.claimed(receiver.address)).to.equal(true)
+  })
+
+  it('claim by others should be ok', async function () {
+    const amount = ethers.utils.parseEther('1')
+    expect(await vETH2Claim.claimed(receiver.address)).to.equal(false)
+    await expect(vETH2Claim.connect(otherUser).claim(receiver.address, amount, proof))
+      .to.emit(vETH2Claim, 'Claimed')
+      .withArgs(otherUser.address, receiver.address, amount)
+    expect(await vETH2.balanceOf(receiver.address)).to.equal(amount)
+    expect(await vETH2.balanceOf(vETH2Claim.address)).to.equal(ethers.utils.parseEther('9'))
     expect(await vETH2Claim.claimed(receiver.address)).to.equal(true)
   })
 
   it('re-claim should be revert', async function () {
     const amount = ethers.utils.parseEther('1')
-    await expect(vETH2Claim.connect(receiver).claim(amount, proof))
+    await expect(vETH2Claim.connect(receiver).claim(receiver.address, amount, proof))
       .to.emit(vETH2Claim, 'Claimed')
-      .withArgs(receiver.address, amount)
-    await expect(vETH2Claim.connect(receiver).claim(amount, proof)).to.revertedWith('Claimed')
+      .withArgs(receiver.address, receiver.address, amount)
+    await expect(vETH2Claim.connect(receiver).claim(receiver.address, amount, proof)).to.revertedWith('Claimed')
   })
 
   it('claim with wrong proof should be revert', async function () {
-    const amount = ethers.utils.parseEther('10')
-    await expect(vETH2Claim.connect(receiver).claim(amount, [])).to.revertedWith('Merkle proof verification failed')
+    const amount = ethers.utils.parseEther('1')
+    await expect(vETH2Claim.connect(receiver).claim(receiver.address, amount, [])).to.revertedWith(
+      'Merkle proof verification failed'
+    )
+  })
+
+  it('claim with invalid receiver should be revert', async function () {
+    const amount = ethers.utils.parseEther('1')
+    await expect(vETH2Claim.connect(receiver).claim(invalidReceiver.address, amount, proof)).to.revertedWith(
+      'Merkle proof verification failed'
+    )
   })
 })
