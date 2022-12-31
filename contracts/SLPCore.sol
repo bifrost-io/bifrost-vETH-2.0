@@ -85,6 +85,10 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function setFee() external onlyOperator {}
 
+    function setOperator(address newOperator) external onlyOwner {
+        operator = newOperator;
+    }
+
     function pause() external onlyOwner {
         super._pause();
     }

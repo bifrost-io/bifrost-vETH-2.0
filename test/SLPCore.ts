@@ -12,13 +12,14 @@ describe('SLPCore', function () {
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
   let operator: SignerWithAddress
+  let newOperator: SignerWithAddress
   let attacker: SignerWithAddress
   let user1: SignerWithAddress
   let user2: SignerWithAddress
   const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
   beforeEach(async function () {
-    ;[deployer, newOwner, operator, attacker, user1, user2] = await ethers.getSigners()
+    ;[deployer, newOwner, operator, newOperator, attacker, user1, user2] = await ethers.getSigners()
 
     const DepositContract = await ethers.getContractFactory('DepositContract')
     const VETH1 = await ethers.getContractFactory('vETH1')
@@ -58,6 +59,12 @@ describe('SLPCore', function () {
     expect(await slpCore.owner()).to.equal(newOwner.address)
   })
 
+  it('transfer owner by attacker should revert', async function () {
+    await expect(slpCore.connect(attacker).transferOwnership(newOwner.address)).to.revertedWith(
+      'Ownable: caller is not the owner'
+    )
+  })
+
   it('pause/unpause by owner should be ok', async function () {
     expect(await slpCore.paused()).to.equal(false)
     await slpCore.pause()
@@ -69,6 +76,17 @@ describe('SLPCore', function () {
   it('pause/unpause by attacker should revert', async function () {
     await expect(slpCore.connect(attacker).pause()).revertedWith('Ownable: caller is not the owner')
     await expect(slpCore.connect(attacker).unpause()).revertedWith('Ownable: caller is not the owner')
+  })
+
+  it('setOperator by owner should be ok', async function () {
+    await slpCore.setOperator(newOperator.address)
+    expect(await slpCore.operator()).to.equal(newOperator.address)
+  })
+
+  it('setOperator by attacker should revert', async function () {
+    await expect(slpCore.connect(attacker).setOperator(newOperator.address)).to.revertedWith(
+      'Ownable: caller is not the owner'
+    )
   })
 
   describe('mint and renew', function () {

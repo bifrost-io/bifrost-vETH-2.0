@@ -28,6 +28,12 @@ describe('vETH2', function () {
     expect(await vETH2.owner()).to.equal(newOwner.address)
   })
 
+  it('transfer owner by attacker should revert', async function () {
+    await expect(vETH2.connect(attacker).transferOwnership(newOwner.address)).to.revertedWith(
+      'Ownable: caller is not the owner'
+    )
+  })
+
   it('mint by owner should be ok', async function () {
     const amount = ethers.utils.parseEther('10')
     await vETH2.mint(receiver.address, amount)

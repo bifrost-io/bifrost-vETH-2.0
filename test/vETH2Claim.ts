@@ -9,6 +9,7 @@ describe('vETH2Claim', function () {
   let vETH2: Contract
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
+  let attacker: SignerWithAddress
   let receiver: SignerWithAddress
   let invalidReceiver: SignerWithAddress
   let otherUser: SignerWithAddress
@@ -16,7 +17,7 @@ describe('vETH2Claim', function () {
   let proof: string[]
 
   before(async function () {
-    ;[deployer, newOwner, receiver, invalidReceiver, otherUser] = await ethers.getSigners()
+    ;[deployer, newOwner, attacker, receiver, invalidReceiver, otherUser] = await ethers.getSigners()
 
     const addressList = []
     for (let i = 0; i < 100; i++) {
@@ -53,6 +54,12 @@ describe('vETH2Claim', function () {
   it('transfer owner should be ok', async function () {
     await vETH2Claim.transferOwnership(newOwner.address)
     expect(await vETH2Claim.owner()).to.equal(newOwner.address)
+  })
+
+  it('transfer owner by attacker should revert', async function () {
+    await expect(vETH2Claim.connect(attacker).transferOwnership(newOwner.address)).to.revertedWith(
+      'Ownable: caller is not the owner'
+    )
   })
 
   it('claim by self should be ok', async function () {

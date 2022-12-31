@@ -32,6 +32,12 @@ describe('SLPDeposit', function () {
     expect(await slpDeposit.owner()).to.equal(newOwner.address)
   })
 
+  it('transfer owner by attacker should revert', async function () {
+    await expect(slpDeposit.connect(attacker).transferOwnership(newOwner.address)).to.revertedWith(
+      'Ownable: caller is not the owner'
+    )
+  })
+
   describe('Batch deposit', function () {
     let allValidators: any[]
     let validators: any[]

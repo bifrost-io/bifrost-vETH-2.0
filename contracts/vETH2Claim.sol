@@ -3,13 +3,14 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
 import "./interfaces/IVETH.sol";
 import "./interfaces/IDepositContract.sol";
 
 // solhint-disable-next-line contract-name-camelcase
-contract vETH2Claim is OwnableUpgradeable {
+contract vETH2Claim is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     /* ========== STATE VARIABLES ========== */
 
     address public vETH2;
@@ -24,6 +25,7 @@ contract vETH2Claim is OwnableUpgradeable {
 
     function initialize(address _vETH2, bytes32 _merkleRoot) public initializer {
         super.__Ownable_init();
+        super.__ReentrancyGuard_init();
 
         vETH2 = _vETH2;
         merkleRoot = _merkleRoot;
@@ -31,7 +33,7 @@ contract vETH2Claim is OwnableUpgradeable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function claim(address target, uint256 amount, bytes32[] memory proof) external {
+    function claim(address target, uint256 amount, bytes32[] memory proof) external nonReentrant {
         require(!claimed[target], "Claimed");
         claimed[target] = true;
 
