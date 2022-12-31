@@ -83,7 +83,7 @@ describe('vETH2', function () {
     await vETH2.mint(newOwner.address, amount)
 
     await vETH2.pause()
-    await expect(vETH2.connect(newOwner).transfer(receiver.address, amount)).revertedWith('vETH: transfer while paused')
+    await expect(vETH2.connect(newOwner).transfer(receiver.address, amount)).revertedWith('Pausable: paused')
     await vETH2.unpause()
     await vETH2.connect(newOwner).transfer(receiver.address, amount)
   })
@@ -95,7 +95,7 @@ describe('vETH2', function () {
     await vETH2.pause()
     await vETH2.connect(newOwner).approve(receiver.address, amount)
     await expect(vETH2.connect(receiver).transferFrom(newOwner.address, receiver.address, amount)).revertedWith(
-      'vETH: transferFrom while paused'
+      'Pausable: paused'
     )
     await vETH2.unpause()
     await vETH2.connect(receiver).transferFrom(newOwner.address, receiver.address, amount)
