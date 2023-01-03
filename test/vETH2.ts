@@ -18,7 +18,7 @@ describe('vETH2', function () {
 
   it('basic check', async function () {
     expect(await vETH2.name()).to.equal('Voucher Ethereum 2.0')
-    expect(await vETH2.symbol()).to.equal('vETH2')
+    expect(await vETH2.symbol()).to.equal('vETH')
     expect(await vETH2.decimals()).to.equal(18)
     expect(await vETH2.owner()).to.equal(deployer.address)
   })
