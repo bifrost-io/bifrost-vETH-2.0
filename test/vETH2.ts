@@ -3,17 +3,20 @@ import { expect } from 'chai'
 import { Contract } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
-describe('vETH2', function () {
+describe('vETH2 Token', function () {
   let vETH2: Contract
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
+  let operator: SignerWithAddress
+  let newOperator: SignerWithAddress
   let receiver: SignerWithAddress
   let attacker: SignerWithAddress
 
   beforeEach(async function () {
-    ;[deployer, newOwner, receiver, attacker] = await ethers.getSigners()
+    ;[deployer, newOwner, operator, newOperator, receiver, attacker] = await ethers.getSigners()
     const VETH2 = await ethers.getContractFactory('vETH2')
     vETH2 = await VETH2.deploy()
+    await vETH2.setOperator(operator.address)
   })
 
   it('basic check', async function () {
@@ -34,18 +37,27 @@ describe('vETH2', function () {
     )
   })
 
-  it('mint by owner should be ok', async function () {
+  it('set operator should be ok', async function () {
+    await vETH2.setOperator(newOperator.address)
+    expect(await vETH2.operator()).to.equal(newOperator.address)
+  })
+
+  it('set operator by attacker should revert', async function () {
+    await expect(vETH2.connect(attacker).setOperator(newOperator.address)).to.revertedWith(
+      'Ownable: caller is not the owner'
+    )
+  })
+
+  it('mint by operator should be ok', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.mint(receiver.address, amount)
+    await vETH2.connect(operator).mint(receiver.address, amount)
     expect(await vETH2.balanceOf(receiver.address)).to.equal(amount)
     expect(await vETH2.totalSupply()).to.equal(amount)
   })
 
   it('mint by attacker should revert', async function () {
     const amount = ethers.utils.parseEther('10')
-    await expect(vETH2.connect(attacker).mint(receiver.address, amount)).revertedWith(
-      'Ownable: caller is not the owner'
-    )
+    await expect(vETH2.connect(attacker).mint(receiver.address, amount)).revertedWith('Caller is not operator')
   })
 
   it('pause/unpause by owner should be ok', async function () {
@@ -63,7 +75,7 @@ describe('vETH2', function () {
 
   it('transfer should be ok', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.mint(newOwner.address, amount)
+    await vETH2.connect(operator).mint(newOwner.address, amount)
     expect(await vETH2.balanceOf(newOwner.address)).to.equal(amount)
     expect(await vETH2.balanceOf(receiver.address)).to.equal(0)
 
@@ -74,7 +86,7 @@ describe('vETH2', function () {
 
   it('transferFrom should be ok', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.mint(newOwner.address, amount)
+    await vETH2.connect(operator).mint(newOwner.address, amount)
     expect(await vETH2.balanceOf(newOwner.address)).to.equal(amount)
     expect(await vETH2.balanceOf(receiver.address)).to.equal(0)
 
@@ -86,7 +98,7 @@ describe('vETH2', function () {
 
   it('transfer when paused should revert', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.mint(newOwner.address, amount)
+    await vETH2.connect(operator).mint(newOwner.address, amount)
 
     await vETH2.pause()
     await expect(vETH2.connect(newOwner).transfer(receiver.address, amount)).revertedWith('Pausable: paused')
@@ -96,7 +108,7 @@ describe('vETH2', function () {
 
   it('transferFrom when paused should revert', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.mint(newOwner.address, amount)
+    await vETH2.connect(operator).mint(newOwner.address, amount)
 
     await vETH2.pause()
     await vETH2.connect(newOwner).approve(receiver.address, amount)
