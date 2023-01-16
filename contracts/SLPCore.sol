@@ -107,7 +107,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     /* ========== MODIFIER ========== */
 
     modifier onlyOperator() {
-        require(msg.sender == operator, "caller is not operator");
+        require(msg.sender == operator, "Caller is not operator");
         _;
     }
 }

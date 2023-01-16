@@ -12,7 +12,9 @@ contract vETH2 is ERC20Pausable, Ownable {
     address public operator;
 
     // solhint-disable-next-line no-empty-blocks
-    constructor() ERC20("Voucher Ethereum 2.0", "vETH") Pausable() Ownable() {}
+    constructor() ERC20("Voucher Ethereum 2.0", "vETH") Pausable() Ownable() {
+        operator = owner();
+    }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 

@@ -43,6 +43,7 @@ describe('SLPCore', function () {
       operator.address,
       ethers.utils.parseEther('1')
     )
+    await vETH2.setOperator(slpCore.address)
     expect(await slpCore.tokenPool()).to.equal(initTokenPoolAmount)
     expect(await vETH2.totalSupply()).to.equal(initTokenPoolAmount)
   })
