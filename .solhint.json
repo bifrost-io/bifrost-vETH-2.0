@@ -6,6 +6,7 @@
     "func-visibility": ["warn", { "ignoreConstructors": true }],
     "max-states-count": ["error", 18],
     "max-line-length": ["warn", 120],
+    "not-rely-on-time": "off",
     "quotes": ["warn", "double"],
     "prettier/prettier": "error"
   }

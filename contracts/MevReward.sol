@@ -18,9 +18,9 @@ contract MevReward is OwnableUpgradeable {
 
     /* ========== CONSTANTS ========== */
 
-    uint256 constant FEE_RATE_DENOMINATOR = 1e4;
-    uint256 constant REWARD_DURATION = 30;
-    uint256 constant REWARD_DURATION_DAYS = REWARD_DURATION * 1 days;
+    uint256 public constant FEE_RATE_DENOMINATOR = 1e4;
+    uint256 public constant REWARD_DURATION = 30;
+    uint256 public constant REWARD_DURATION_DAYS = REWARD_DURATION * 1 days;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -58,11 +58,12 @@ contract MevReward is OwnableUpgradeable {
         uint256 times = endAt.sub(reward.lastPaidAt).div(1 days);
         rewardAmount = reward.pending.add(reward.perDay.mul(times));
         require(reward.paid.add(rewardAmount) <= reward.total, "Pay amount exceeds range");
-        payable(rewardReceiver).transfer(rewardAmount);
 
         reward.paid = reward.paid.add(rewardAmount);
         reward.pending = 0;
         reward.lastPaidAt = block.timestamp.div(1 days).mul(1 days);
+
+        payable(rewardReceiver).transfer(rewardAmount);
 
         emit RewardPaid(msg.sender, rewardReceiver, rewardAmount);
     }
