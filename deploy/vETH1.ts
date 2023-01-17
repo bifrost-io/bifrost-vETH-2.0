@@ -13,6 +13,6 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
 
 export default deployFunction
 
-deployFunction.dependencies = ['']
+deployFunction.dependencies = []
 
 deployFunction.tags = ['vETH1']
