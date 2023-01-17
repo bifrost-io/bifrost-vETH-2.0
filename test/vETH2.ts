@@ -16,6 +16,7 @@ describe('vETH2 Token', function () {
     ;[deployer, newOwner, operator, newOperator, receiver, attacker] = await ethers.getSigners()
     const VETH2 = await ethers.getContractFactory('vETH2')
     vETH2 = await VETH2.deploy()
+    expect(await vETH2.operator()).to.equal(deployer.address)
     await vETH2.setOperator(operator.address)
   })
 
@@ -24,6 +25,7 @@ describe('vETH2 Token', function () {
     expect(await vETH2.symbol()).to.equal('vETH')
     expect(await vETH2.decimals()).to.equal(18)
     expect(await vETH2.owner()).to.equal(deployer.address)
+    expect(await vETH2.operator()).to.equal(operator.address)
   })
 
   it('transfer owner should be ok', async function () {
