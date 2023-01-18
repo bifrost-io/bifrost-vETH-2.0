@@ -4,11 +4,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 contract MevReward is OwnableUpgradeable {
     using SafeMathUpgradeable for uint256;
-    using EnumerableSetUpgradeable for EnumerableSetUpgradeable.UintSet;
 
     /* ========== EVENTS ========== */
 
