@@ -25,13 +25,14 @@ describe('MevReward', function () {
   })
 
   it('basic check', async function () {
+    const now = await time.latest()
     const reward = await mevReward.reward()
     expect(reward.total).to.equal(0)
     expect(reward.perDay).to.equal(0)
     expect(reward.paid).to.equal(0)
     expect(reward.pending).to.equal(0)
-    expect(reward.lastPaidAt).to.equal(await time.latest())
-    expect(reward.finishAt).to.equal(await time.latest())
+    expect(reward.lastPaidAt).to.equal(now)
+    expect(reward.finishAt).to.equal(now)
 
     const fee = await mevReward.fee()
     expect(fee.feeRate).to.equal(100)
@@ -68,7 +69,7 @@ describe('MevReward', function () {
   })
 
   it('setFeeRate exceeds range should revert', async function () {
-    const newFeeRate = 100001
+    const newFeeRate = 10001
     await expect(mevReward.setFeeRate(newFeeRate)).revertedWith('Fee rate exceeds range')
   })
 
@@ -83,60 +84,62 @@ describe('MevReward', function () {
     )
   })
 
-  it('send reward should be ok', async function () {
-    const amount = ethers.utils.parseEther('1')
-    await expect(
-      rewardPayer.sendTransaction({
-        to: mevReward.address,
-        value: amount,
-      })
-    )
-      .to.emit(mevReward, 'RewardReceived')
-      .withArgs(rewardPayer.address, amount)
+  describe('send reward', function () {
+    it('send reward should be ok', async function () {
+      const amount = ethers.utils.parseEther('1')
+      await expect(
+        rewardPayer.sendTransaction({
+          to: mevReward.address,
+          value: amount,
+        })
+      )
+        .to.emit(mevReward, 'RewardReceived')
+        .withArgs(rewardPayer.address, amount)
 
-    let now = await time.latest()
-    let reward = await mevReward.reward()
-    let fee = await mevReward.fee()
-    expect(reward.total).to.equal(ethers.utils.parseEther('0.99'))
-    expect(reward.perDay).to.equal(ethers.utils.parseEther('0.033'))
-    expect(reward.paid).to.equal(0)
-    expect(reward.pending).to.equal(0)
-    expect(reward.lastPaidAt).to.equal(BigNumber.from(now).div(time.duration.days(1)).mul(time.duration.days(1)))
-    expect(reward.finishAt).to.equal(reward.lastPaidAt.add(time.duration.days(30)))
-    expect(fee.totalFee).to.equal(ethers.utils.parseEther('0.01'))
-    expect(fee.claimedFee).to.equal(0)
+      let now = await time.latest()
+      let reward = await mevReward.reward()
+      let fee = await mevReward.fee()
+      expect(reward.total).to.equal(ethers.utils.parseEther('0.99'))
+      expect(reward.perDay).to.equal(ethers.utils.parseEther('0.033'))
+      expect(reward.paid).to.equal(0)
+      expect(reward.pending).to.equal(0)
+      expect(reward.lastPaidAt).to.equal(BigNumber.from(now).div(time.duration.days(1)).mul(time.duration.days(1)))
+      expect(reward.finishAt).to.equal(reward.lastPaidAt.add(time.duration.days(30)))
+      expect(fee.totalFee).to.equal(ethers.utils.parseEther('0.01'))
+      expect(fee.claimedFee).to.equal(0)
 
-    const day = 15
-    await time.increase(time.duration.days(day))
-    await expect(
-      rewardPayer.sendTransaction({
-        to: mevReward.address,
-        value: amount,
-      })
-    )
-      .to.emit(mevReward, 'RewardReceived')
-      .withArgs(rewardPayer.address, amount)
+      const day = 15
+      await time.increase(time.duration.days(day))
+      await expect(
+        rewardPayer.sendTransaction({
+          to: mevReward.address,
+          value: amount,
+        })
+      )
+        .to.emit(mevReward, 'RewardReceived')
+        .withArgs(rewardPayer.address, amount)
 
-    now = await time.latest()
-    reward = await mevReward.reward()
-    fee = await mevReward.fee()
-    expect(reward.total).to.equal(ethers.utils.parseEther('0.99').mul(2))
-    expect(reward.perDay).to.equal(ethers.utils.parseEther('0.033').mul(2))
-    expect(reward.paid).to.equal(0)
-    expect(reward.pending).to.equal(ethers.utils.parseEther('0.033').mul(day))
-    expect(reward.lastPaidAt).to.equal(BigNumber.from(now).div(time.duration.days(1)).mul(time.duration.days(1)))
-    expect(reward.finishAt).to.equal(reward.lastPaidAt.add(time.duration.days(30)))
-    expect(fee.totalFee).to.equal(ethers.utils.parseEther('0.01').mul(2))
-    expect(fee.claimedFee).to.equal(0)
-  })
+      now = await time.latest()
+      reward = await mevReward.reward()
+      fee = await mevReward.fee()
+      expect(reward.total).to.equal(ethers.utils.parseEther('0.99').mul(2))
+      expect(reward.perDay).to.equal(ethers.utils.parseEther('0.033').mul(2))
+      expect(reward.paid).to.equal(0)
+      expect(reward.pending).to.equal(ethers.utils.parseEther('0.033').mul(day))
+      expect(reward.lastPaidAt).to.equal(BigNumber.from(now).div(time.duration.days(1)).mul(time.duration.days(1)))
+      expect(reward.finishAt).to.equal(reward.lastPaidAt.add(time.duration.days(30)))
+      expect(fee.totalFee).to.equal(ethers.utils.parseEther('0.01').mul(2))
+      expect(fee.claimedFee).to.equal(0)
+    })
 
-  it('send reward too low should revert', async function () {
-    await expect(
-      rewardPayer.sendTransaction({
-        to: mevReward.address,
-        value: 29,
-      })
-    ).revertedWith('Reward amount is too low')
+    it('send reward too low should revert', async function () {
+      await expect(
+        rewardPayer.sendTransaction({
+          to: mevReward.address,
+          value: 29,
+        })
+      ).revertedWith('Reward amount is too low')
+    })
   })
 
   describe('payReward', function () {
