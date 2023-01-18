@@ -92,9 +92,9 @@ contract MevReward is OwnableUpgradeable {
         uint256 rewardAmount = msg.value.sub(feeAmount);
         require(rewardAmount >= REWARD_DURATION, "Reward amount is too low");
 
+        reward.pending = reward.pending.add(reward.perDay.mul(_getTimes()));
         reward.lastPaidAt = block.timestamp.div(1 days).mul(1 days);
         reward.finishAt = reward.lastPaidAt.add(REWARD_DURATION_DAYS);
-        reward.pending = reward.pending.add(reward.perDay.mul(_getTimes()));
         reward.total = reward.total.add(rewardAmount);
         reward.perDay = reward.total.sub(reward.paid).div(REWARD_DURATION);
 
