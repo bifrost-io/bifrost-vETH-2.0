@@ -96,7 +96,7 @@ contract MevReward is OwnableUpgradeable {
         reward.lastPaidAt = block.timestamp.div(1 days).mul(1 days);
         reward.finishAt = reward.lastPaidAt.add(REWARD_DURATION_DAYS);
         reward.total = reward.total.add(rewardAmount);
-        reward.perDay = reward.total.sub(reward.paid).div(REWARD_DURATION);
+        reward.perDay = reward.total.sub(reward.paid).sub(reward.pending).div(REWARD_DURATION);
 
         fee.totalFee = fee.totalFee.add(feeAmount);
 
