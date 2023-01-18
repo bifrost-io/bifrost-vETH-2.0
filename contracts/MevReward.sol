@@ -58,7 +58,8 @@ contract MevReward is OwnableUpgradeable {
 
         reward.paid = reward.paid.add(rewardAmount);
         reward.pending = 0;
-        reward.lastPaidAt = block.timestamp.div(1 days).mul(1 days);
+        uint256 paidAt = block.timestamp.div(1 days).mul(1 days);
+        reward.lastPaidAt = paidAt <= reward.finishAt ? paidAt : reward.finishAt;
 
         payable(rewardReceiver).transfer(rewardAmount);
 
@@ -89,11 +90,11 @@ contract MevReward is OwnableUpgradeable {
     receive() external payable {
         uint256 feeAmount = msg.value.mul(fee.feeRate).div(FEE_RATE_DENOMINATOR);
         uint256 rewardAmount = msg.value.sub(feeAmount);
-        require(rewardAmount >= REWARD_DURATION, "Reward amount too small");
+        require(rewardAmount >= REWARD_DURATION, "Reward amount is too low");
 
-        reward.finishAt = block.timestamp.div(1 days).mul(1 days).add(REWARD_DURATION_DAYS);
-        reward.pending = reward.pending.add(reward.perDay.mul(_getTimes()));
         reward.lastPaidAt = block.timestamp.div(1 days).mul(1 days);
+        reward.finishAt = reward.lastPaidAt.add(REWARD_DURATION_DAYS);
+        reward.pending = reward.pending.add(reward.perDay.mul(_getTimes()));
         reward.total = reward.total.add(rewardAmount);
         reward.perDay = reward.total.sub(reward.paid).div(REWARD_DURATION);
 
@@ -101,6 +102,8 @@ contract MevReward is OwnableUpgradeable {
 
         emit RewardReceived(msg.sender, msg.value);
     }
+
+    /* ========== VIEWS ========== */
 
     function _getTimes() private view returns (uint256 times) {
         uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
