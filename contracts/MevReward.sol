@@ -45,6 +45,7 @@ contract MevReward is OwnableUpgradeable {
         super.__Ownable_init();
 
         reward.lastPaidAt = block.timestamp;
+        reward.finishAt = block.timestamp;
         rewardReceiver = _rewardReceiver;
         _setFeeRate(_feeRate);
     }
@@ -52,9 +53,7 @@ contract MevReward is OwnableUpgradeable {
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     function payReward() external onlyOwner returns (uint256 rewardAmount) {
-        uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
-        uint256 times = endAt.sub(reward.lastPaidAt).div(1 days);
-        rewardAmount = reward.pending.add(reward.perDay.mul(times));
+        rewardAmount = reward.pending.add(reward.perDay.mul(_getTimes()));
         require(reward.paid.add(rewardAmount) <= reward.total, "Pay amount exceeds range");
 
         reward.paid = reward.paid.add(rewardAmount);
@@ -93,9 +92,7 @@ contract MevReward is OwnableUpgradeable {
         require(rewardAmount >= REWARD_DURATION, "Reward amount too small");
 
         reward.finishAt = block.timestamp.div(1 days).mul(1 days).add(REWARD_DURATION_DAYS);
-        uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
-        uint256 times = endAt.sub(reward.lastPaidAt).div(1 days);
-        reward.pending = reward.pending.add(reward.perDay.mul(times));
+        reward.pending = reward.pending.add(reward.perDay.mul(_getTimes()));
         reward.lastPaidAt = block.timestamp.div(1 days).mul(1 days);
         reward.total = reward.total.add(rewardAmount);
         reward.perDay = reward.total.sub(reward.paid).div(REWARD_DURATION);
@@ -103,5 +100,10 @@ contract MevReward is OwnableUpgradeable {
         fee.totalFee = fee.totalFee.add(feeAmount);
 
         emit RewardReceived(msg.sender, msg.value);
+    }
+
+    function _getTimes() private view returns (uint256 times) {
+        uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
+        times = endAt.sub(reward.lastPaidAt).div(1 days);
     }
 }
