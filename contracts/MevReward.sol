@@ -56,10 +56,10 @@ contract MevReward is OwnableUpgradeable {
         rewardAmount = reward.pending.add(reward.perDay.mul(_getTimes()));
         require(reward.paid.add(rewardAmount) <= reward.total, "Pay amount exceeds range");
 
-        reward.paid = reward.paid.add(rewardAmount);
-        reward.pending = 0;
         uint256 paidAt = block.timestamp.div(1 days).mul(1 days);
         reward.lastPaidAt = paidAt <= reward.finishAt ? paidAt : reward.finishAt;
+        reward.paid = reward.paid.add(rewardAmount);
+        reward.pending = 0;
 
         payable(rewardReceiver).transfer(rewardAmount);
 
