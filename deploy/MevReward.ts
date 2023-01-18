@@ -8,7 +8,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
-  const feeRate = 100n
+  const feeRate = 100
   const rewardReceiver = ethers.constants.AddressZero
 
   const { address } = await deploy('MevReward', {
