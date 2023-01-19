@@ -23,6 +23,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     /* ========== CONSTANTS ========== */
 
     address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
+    uint256 public constant FEE_RATE_DENOMINATOR = 1e4;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -34,14 +35,20 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     address public operator;
 
+    address public feeReceiver;
+
     uint256 public tokenPool;
+
+    uint256 public feeRate;
 
     function initialize(
         address _vETH1,
         address _vETH2,
         address _slpDeposit,
         address _operator,
-        uint256 _initTokenPool
+        address _feeReceiver,
+        uint256 _initTokenPool,
+        uint256 _feeRate
     ) public initializer {
         super.__Ownable_init();
         super.__ReentrancyGuard_init();
@@ -51,7 +58,9 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         vETH2 = _vETH2;
         slpDeposit = _slpDeposit;
         operator = _operator;
+        feeReceiver = _feeReceiver;
         tokenPool = _initTokenPool;
+        _setFeeRate(_feeRate);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -81,9 +90,22 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function addReward(uint256 amount) external onlyOperator {
         tokenPool = tokenPool.add(amount);
+        uint256 fee = amount.mul(feeRate).div(FEE_RATE_DENOMINATOR);
+        // Fee: mint vETH to Treasury(multi-sig contract)
+        IVETH(vETH2).mint(feeReceiver, fee);
     }
 
-    function setFee() external onlyOperator {}
+    function removeReward(uint256 amount) external onlyOperator {
+        tokenPool = tokenPool.sub(amount);
+    }
+
+    function setFeeRate(uint256 _feeRate) external onlyOwner {
+        _setFeeRate(_feeRate);
+    }
+
+    function setFeeReceiver(address _feeReceiver) external onlyOwner {
+        feeReceiver = _feeReceiver;
+    }
 
     function setOperator(address newOperator) external onlyOwner {
         operator = newOperator;
@@ -95,6 +117,11 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function unpause() external onlyOwner {
         super._unpause();
+    }
+
+    function _setFeeRate(uint256 _feeRate) private {
+        require(_feeRate <= FEE_RATE_DENOMINATOR, "Fee rate exceeds range");
+        feeRate = _feeRate;
     }
 
     /* ========== VIEWS ========== */

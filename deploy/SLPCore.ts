@@ -12,7 +12,9 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const vETH2 = (await deployments.get('vETH2')).address
   const SLPDeposit = (await deployments.get('SLPDeposit')).address
   const operator = ethers.constants.AddressZero
+  const feeReceiver = ethers.constants.AddressZero
   const initTokenPool = ethers.utils.parseEther('1')
+  const feeRate = 0
 
   const { address } = await deploy('SLPCore', {
     from: deployer,
@@ -23,7 +25,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
       execute: {
         init: {
           methodName: 'initialize',
-          args: [vETH1, vETH2, SLPDeposit, operator, initTokenPool],
+          args: [vETH1, vETH2, SLPDeposit, operator, feeReceiver, initTokenPool, feeRate],
         },
       },
     },

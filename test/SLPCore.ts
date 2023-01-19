@@ -16,10 +16,13 @@ describe('SLPCore', function () {
   let attacker: SignerWithAddress
   let user1: SignerWithAddress
   let user2: SignerWithAddress
+  let feeReceiver: SignerWithAddress
+  let newFeeReceiver: SignerWithAddress
   const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
   beforeEach(async function () {
-    ;[deployer, newOwner, operator, newOperator, attacker, user1, user2] = await ethers.getSigners()
+    ;[deployer, newOwner, operator, newOperator, attacker, user1, user2, feeReceiver, newFeeReceiver] =
+      await ethers.getSigners()
 
     const DepositContract = await ethers.getContractFactory('DepositContract')
     const VETH1 = await ethers.getContractFactory('vETH1')
@@ -34,6 +37,7 @@ describe('SLPCore', function () {
     slpCore = await SLPCore.deploy()
 
     const initTokenPoolAmount = ethers.utils.parseEther('1')
+    const feeRate = 100
     await vETH2.mint(deployer.address, initTokenPoolAmount)
     await slpDeposit.initialize(depositContract.address)
     await slpCore.initialize(
@@ -41,18 +45,26 @@ describe('SLPCore', function () {
       vETH2.address,
       slpDeposit.address,
       operator.address,
-      ethers.utils.parseEther('1')
+      feeReceiver.address,
+      initTokenPoolAmount,
+      feeRate
     )
     await vETH2.setOperator(slpCore.address)
-    expect(await slpCore.tokenPool()).to.equal(initTokenPoolAmount)
-    expect(await vETH2.totalSupply()).to.equal(initTokenPoolAmount)
   })
 
   it('basic check', async function () {
+    const initTokenPoolAmount = ethers.utils.parseEther('1')
+    const feeRate = 100
+    expect(await vETH2.totalSupply()).to.equal(initTokenPoolAmount)
+    expect(await slpCore.tokenPool()).to.equal(initTokenPoolAmount)
     expect(await slpCore.vETH1()).to.equal(vETH1.address)
     expect(await slpCore.vETH2()).to.equal(vETH2.address)
     expect(await slpCore.slpDeposit()).to.equal(slpDeposit.address)
     expect(await slpCore.operator()).to.equal(operator.address)
+    expect(await slpCore.feeReceiver()).to.equal(feeReceiver.address)
+    expect(await slpCore.feeRate()).to.equal(feeRate)
+    expect(await slpCore.DEAD_ADDRESS()).to.equal(DEAD_ADDRESS)
+    expect(await slpCore.FEE_RATE_DENOMINATOR()).to.equal(10000)
   })
 
   it('transfer owner should be ok', async function () {
@@ -77,6 +89,30 @@ describe('SLPCore', function () {
   it('pause/unpause by attacker should revert', async function () {
     await expect(slpCore.connect(attacker).pause()).revertedWith('Ownable: caller is not the owner')
     await expect(slpCore.connect(attacker).unpause()).revertedWith('Ownable: caller is not the owner')
+  })
+
+  it('setFeeRate by owner should be ok', async function () {
+    await slpCore.setFeeRate(200)
+    expect(await slpCore.feeRate()).to.equal(200)
+  })
+
+  it('setFeeRate exceeds range should revert', async function () {
+    await expect(slpCore.setFeeRate(10001)).to.revertedWith('Fee rate exceeds range')
+  })
+
+  it('setFeeRate by attacker should revert', async function () {
+    await expect(slpCore.connect(attacker).setFeeRate(200)).to.revertedWith('Ownable: caller is not the owner')
+  })
+
+  it('setFeeReceiver by owner should be ok', async function () {
+    await slpCore.setFeeReceiver(newFeeReceiver.address)
+    expect(await slpCore.feeReceiver()).to.equal(newFeeReceiver.address)
+  })
+
+  it('setFeeReceiver by attacker should revert', async function () {
+    await expect(slpCore.connect(attacker).setFeeReceiver(newFeeReceiver.address)).to.revertedWith(
+      'Ownable: caller is not the owner'
+    )
   })
 
   it('setOperator by owner should be ok', async function () {
@@ -157,10 +193,10 @@ describe('SLPCore', function () {
       const reward = ethers.utils.parseEther('0.1')
       await slpCore.connect(operator).addReward(reward)
       expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('1.1'))
-      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('1'))
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('1.001'))
 
       const tokenAmount = ethers.utils.parseEther('1')
-      const vTokenAmount = 909090909090909090n
+      const vTokenAmount = ethers.utils.parseEther('0.91')
       await expect(slpCore.connect(user1).mint({ value: tokenAmount }))
         .to.emit(slpCore, 'Deposited')
         .withArgs(user1.address, tokenAmount, vTokenAmount)
