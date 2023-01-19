@@ -38,7 +38,9 @@ contract MevReward is OwnableUpgradeable {
     }
 
     Fee public fee;
+
     Reward public reward;
+
     address public rewardReceiver;
 
     function initialize(uint256 _feeRate, address _rewardReceiver) public initializer {
