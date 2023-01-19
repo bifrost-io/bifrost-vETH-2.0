@@ -52,8 +52,8 @@ contract MevReward is OwnableUpgradeable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function payReward() external onlyOwner returns (uint256 rewardAmount) {
-        rewardAmount = reward.pending.add(reward.perDay.mul(_getTimes()));
+    function payReward() external onlyOwner {
+        uint256 rewardAmount = reward.pending.add(reward.perDay.mul(_getTimes()));
         require(reward.paid.add(rewardAmount) <= reward.total, "Pay amount exceeds range");
 
         uint256 paidAt = block.timestamp.div(1 days).mul(1 days);
@@ -68,10 +68,6 @@ contract MevReward is OwnableUpgradeable {
 
     function setFeeRate(uint256 _feeRate) external onlyOwner {
         _setFeeRate(_feeRate);
-    }
-
-    function setRewardReceiver(address _rewardReceiver) external onlyOwner {
-        rewardReceiver = _rewardReceiver;
     }
 
     function withdrawFee(address receiver, uint256 amount) external onlyOwner {

@@ -73,17 +73,6 @@ describe('MevReward', function () {
     await expect(mevReward.setFeeRate(newFeeRate)).revertedWith('Fee rate exceeds range')
   })
 
-  it('setRewardReceiver should be ok', async function () {
-    await mevReward.setRewardReceiver(newRewardReceiver.address)
-    expect(await mevReward.rewardReceiver()).to.equal(newRewardReceiver.address)
-  })
-
-  it('setRewardReceiver by attacker should revert', async function () {
-    await expect(mevReward.connect(attacker).setRewardReceiver(newRewardReceiver.address)).revertedWith(
-      'Ownable: caller is not the owner'
-    )
-  })
-
   describe('send reward', function () {
     it('send reward no overlap should be ok', async function () {
       const amount = ethers.utils.parseEther('1')

@@ -8,8 +8,8 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
-  const feeRate = 100
-  const rewardReceiver = ethers.constants.AddressZero
+  const feeRate = 0
+  const rewardReceiver = (await deployments.get('SLPDeposit')).address
 
   const { address } = await deploy('MevReward', {
     from: deployer,
@@ -31,6 +31,6 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
 
 export default deployFunction
 
-deployFunction.dependencies = []
+deployFunction.dependencies = ['SLPDeposit']
 
 deployFunction.tags = ['MevReward']
