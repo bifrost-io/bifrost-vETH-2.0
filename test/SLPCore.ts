@@ -191,7 +191,9 @@ describe('SLPCore', function () {
 
     it('addReward should be ok', async function () {
       const reward = ethers.utils.parseEther('0.1')
-      await slpCore.connect(operator).addReward(reward)
+      await expect(slpCore.connect(operator).addReward(reward))
+        .to.emit(slpCore, 'RewardAdded')
+        .withArgs(operator.address, reward, ethers.utils.parseEther('0.001'))
       expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('1.1'))
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('1.001'))
 
@@ -209,6 +211,38 @@ describe('SLPCore', function () {
         .withArgs(user2.address, tokenAmount, vTokenAmount)
       expect(await vETH2.balanceOf(user2.address)).to.equal(vTokenAmount)
       expect(await vETH1.balanceOf(DEAD_ADDRESS)).to.equal(tokenAmount)
+    })
+
+    it('addReward by attacker should revert', async function () {
+      await expect(slpCore.connect(attacker).addReward(1)).to.revertedWith('Caller is not operator')
+    })
+
+    it('removeReward should be ok', async function () {
+      const reward = ethers.utils.parseEther('0.1')
+      await expect(slpCore.connect(operator).removeReward(reward))
+        .to.emit(slpCore, 'RewardRemoved')
+        .withArgs(operator.address, reward)
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('0.9'))
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('1'))
+
+      const tokenAmount = ethers.utils.parseEther('1')
+      const vTokenAmount = 1111111111111111111n
+      await expect(slpCore.connect(user1).mint({ value: tokenAmount }))
+        .to.emit(slpCore, 'Deposited')
+        .withArgs(user1.address, tokenAmount, vTokenAmount)
+      expect(await vETH2.balanceOf(user1.address)).to.equal(vTokenAmount)
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(tokenAmount)
+
+      await vETH1.connect(user2).approve(slpCore.address, tokenAmount)
+      await expect(slpCore.connect(user2).renew(tokenAmount))
+        .to.emit(slpCore, 'Renewed')
+        .withArgs(user2.address, tokenAmount, vTokenAmount)
+      expect(await vETH2.balanceOf(user2.address)).to.equal(vTokenAmount)
+      expect(await vETH1.balanceOf(DEAD_ADDRESS)).to.equal(tokenAmount)
+    })
+
+    it('removeReward by attacker should revert', async function () {
+      await expect(slpCore.connect(attacker).removeReward(1)).to.revertedWith('Caller is not operator')
     })
   })
 })

@@ -19,6 +19,8 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     event Deposited(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
     event Renewed(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
+    event RewardAdded(address indexed sender, uint256 amount, uint256 fee);
+    event RewardRemoved(address indexed sender, uint256 amount);
 
     /* ========== CONSTANTS ========== */
 
@@ -89,14 +91,19 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function addReward(uint256 amount) external onlyOperator {
+        uint256 tokenFee = amount.mul(feeRate).div(FEE_RATE_DENOMINATOR);
+        uint256 vTokenFee = calculateVTokenAmount(tokenFee);
         tokenPool = tokenPool.add(amount);
-        uint256 fee = amount.mul(feeRate).div(FEE_RATE_DENOMINATOR);
         // Fee: mint vETH to Treasury(multi-sig contract)
-        IVETH(vETH2).mint(feeReceiver, fee);
+        IVETH(vETH2).mint(feeReceiver, vTokenFee);
+
+        emit RewardAdded(msg.sender, amount, vTokenFee);
     }
 
     function removeReward(uint256 amount) external onlyOperator {
         tokenPool = tokenPool.sub(amount);
+
+        emit RewardRemoved(msg.sender, amount);
     }
 
     function setFeeRate(uint256 _feeRate) external onlyOwner {
