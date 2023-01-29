@@ -1,13 +1,15 @@
 import { task } from 'hardhat/config'
 import axios from 'axios'
+import { CHAIN_ID, VETH2_CLAIM_MERKLE_ROOT } from '../constants/constants'
 
 task('user-claim', 'Claim vETH1 reward')
   .addParam('id', 'User id')
-  .setAction(async function (params: { id: number }, { ethers }) {
+  .setAction(async function (params: { id: number }, { ethers, network }) {
     const vETH2 = await ethers.deployContract('vETH2')
     const vETH2Claim = await ethers.deployContract('vETH2Claim')
 
-    const merkleRoot = '0xe742cf52415caaa1342a1dc1bc2dd744bf71f249886f62ae8dea47803e0a7608'
+    const chainId = network.config.chainId as CHAIN_ID
+    const merkleRoot = VETH2_CLAIM_MERKLE_ROOT[chainId]
     await vETH2Claim.initialize(vETH2.address, merkleRoot)
     await vETH2.mint(vETH2Claim.address, ethers.utils.parseEther('1000'))
 

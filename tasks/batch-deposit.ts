@@ -1,16 +1,18 @@
 import { task } from 'hardhat/config'
 import axios from 'axios'
+import { CHAIN_ID, SLP_DEPOSIT_MERKLE_ROOT } from '../constants/constants'
 
 task('batch-deposit', 'Batch deposit ETH')
   .addParam('skip', 'Skip items')
   .addParam('take', 'Take items')
-  .setAction(async function (params: { skip: number; take: number }, { ethers }) {
+  .setAction(async function (params: { skip: number; take: number }, { ethers, network }) {
     const slpDeposit = await ethers.deployContract('SLPDeposit')
     const depositContract = await ethers.deployContract('DepositContract')
     await slpDeposit.initialize(depositContract.address)
 
     const index = 0
-    const merkleRoot = '0xd68ce67b1e69f61353fd887b267493c2f1401f9711c0c2b1744bbe8cbf27938f'
+    const chainId = network.config.chainId as CHAIN_ID
+    const merkleRoot = SLP_DEPOSIT_MERKLE_ROOT[chainId]
     await slpDeposit.setMerkleRoot(index, merkleRoot)
     console.log('\x1b[32m%s\x1b[0m', `Merkle root at index 0 is ${await slpDeposit.merkleRoots(index)}`)
 
