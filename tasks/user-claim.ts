@@ -12,6 +12,7 @@ task('user-claim', 'Claim vETH1 reward')
     const merkleRoot = VETH2_CLAIM_MERKLE_ROOT[chainId]
     await vETH2Claim.initialize(vETH2.address, merkleRoot)
     await vETH2.mint(vETH2Claim.address, ethers.utils.parseEther('1000'))
+    console.log('\x1b[32m%s\x1b[0m', `Merkle root is ${await vETH2Claim.merkleRoot()}`)
 
     try {
       const { address, amount } = await queryReward(params.id)
