@@ -1,6 +1,5 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
-import { ethers } from 'hardhat'
 
 const deployFunction: DeployFunction = async function ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) {
   console.log('Running MevReward deploy script')
@@ -8,7 +7,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
-  const feeRate = 0
+  const feeRate = 0 // not used
   const rewardReceiver = (await deployments.get('SLPDeposit')).address
 
   const { address } = await deploy('MevReward', {

@@ -1,8 +1,13 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers } from 'hardhat'
+import { CHAIN_ID, SLP_DEPOSIT_MERKLE_ROOT } from '../constants/constants'
 
-const deployFunction: DeployFunction = async function ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) {
+const deployFunction: DeployFunction = async function ({
+  deployments,
+  getNamedAccounts,
+  network,
+}: HardhatRuntimeEnvironment) {
   console.log('Running SLPDeposit deploy script')
 
   const { deploy } = deployments
@@ -27,7 +32,9 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
 
   const slpDeposit = await ethers.getContractAt('SLPDeposit', address)
   const index = 0
-  const merkleRoot = '0xd68ce67b1e69f61353fd887b267493c2f1401f9711c0c2b1744bbe8cbf27938f'
+  const chainId = network.config.chainId as CHAIN_ID
+  const merkleRoot = SLP_DEPOSIT_MERKLE_ROOT[chainId]
+
   await slpDeposit.setMerkleRoot(index, merkleRoot)
   console.log('\x1b[32m%s\x1b[0m', `Merkle root at index 0 is ${await slpDeposit.merkleRoots(index)}`)
 

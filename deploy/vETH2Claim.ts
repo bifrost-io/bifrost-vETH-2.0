@@ -1,15 +1,20 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
-import { ethers } from 'hardhat'
+import { CHAIN_ID, VETH2_CLAIM_MERKLE_ROOT } from '../constants/constants'
 
-const deployFunction: DeployFunction = async function ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) {
+const deployFunction: DeployFunction = async function ({
+  deployments,
+  getNamedAccounts,
+  network,
+}: HardhatRuntimeEnvironment) {
   console.log('Running vETH2Claim deploy script')
 
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
   const vETH2 = (await deployments.get('vETH2')).address
-  const merkleRoot = ethers.constants.HashZero
+  const chainId = network.config.chainId as CHAIN_ID
+  const merkleRoot = VETH2_CLAIM_MERKLE_ROOT[chainId]
 
   const { address } = await deploy('vETH2Claim', {
     from: deployer,

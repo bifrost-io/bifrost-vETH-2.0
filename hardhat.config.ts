@@ -20,6 +20,7 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      chainId: 1000,
       forking: {
         enabled: process.env.FORKING === 'true',
         url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,

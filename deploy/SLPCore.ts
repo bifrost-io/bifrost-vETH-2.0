@@ -1,20 +1,27 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { ethers } from 'hardhat'
+import { CHAIN_ID, SLP_FEE_RECEIVER_ADDRESS, SLP_OPERATOR_ADDRESS, VETH1_ADDRESS } from '../constants/constants'
 
-const deployFunction: DeployFunction = async function ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) {
+const deployFunction: DeployFunction = async function ({
+  deployments,
+  getNamedAccounts,
+  network,
+}: HardhatRuntimeEnvironment) {
   console.log('Running SLPCore deploy script')
 
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
-  const vETH1 = '0xc3d088842dcf02c13699f936bb83dfbbc6f721ab'
+  const chainId = network.config.chainId as CHAIN_ID
+  const vETH1 = VETH1_ADDRESS[chainId]
   const vETH2 = (await deployments.get('vETH2')).address
   const SLPDeposit = (await deployments.get('SLPDeposit')).address
-  const operator = ethers.constants.AddressZero
-  const feeReceiver = ethers.constants.AddressZero
+  const operator = SLP_OPERATOR_ADDRESS[chainId]
+  const feeReceiver = SLP_FEE_RECEIVER_ADDRESS[chainId]
   const initTokenPool = ethers.utils.parseEther('1')
-  const feeRate = 0
+  // 500/10000 = 5%
+  const feeRate = 500
 
   const { address } = await deploy('SLPCore', {
     from: deployer,
