@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 contract MevReward is OwnableUpgradeable {
@@ -63,7 +64,7 @@ contract MevReward is OwnableUpgradeable {
         reward.paid = reward.paid.add(rewardAmount);
         reward.pending = 0;
 
-        payable(rewardReceiver).transfer(rewardAmount);
+        AddressUpgradeable.sendValue(payable(rewardReceiver), rewardAmount);
 
         emit RewardPaid(msg.sender, rewardReceiver, rewardAmount);
     }
@@ -75,7 +76,8 @@ contract MevReward is OwnableUpgradeable {
     function withdrawFee(address receiver, uint256 amount) external onlyOwner {
         require(fee.claimedFee.add(amount) <= fee.totalFee, "Withdraw amount exceeds range");
         fee.claimedFee = fee.claimedFee.add(amount);
-        payable(receiver).transfer(amount);
+
+        AddressUpgradeable.sendValue(payable(receiver), amount);
 
         emit FeeWithdrawn(msg.sender, receiver, amount);
     }
