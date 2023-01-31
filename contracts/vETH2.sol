@@ -35,6 +35,7 @@ contract vETH2 is ERC20Pausable, Ownable {
     }
 
     function setOperator(address _operator) external onlyOwner {
+        require(_operator != address(0), "Invalid operator address");
         operator = _operator;
     }
 

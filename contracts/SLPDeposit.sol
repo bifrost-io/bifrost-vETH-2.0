@@ -24,6 +24,7 @@ contract SLPDeposit is OwnableUpgradeable {
     mapping(uint256 => bytes32) public merkleRoots;
 
     function initialize(address _depositContract) public initializer {
+        require(_depositContract != address(0), "Invalid deposit contract");
         super.__Ownable_init();
 
         depositContract = _depositContract;

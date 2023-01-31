@@ -42,6 +42,7 @@ contract MevReward is OwnableUpgradeable {
     address public rewardReceiver;
 
     function initialize(uint256 _feeRate, address _rewardReceiver) public initializer {
+        require(_rewardReceiver != address(0), "Invalid reward receiver address");
         super.__Ownable_init();
 
         reward.lastPaidAt = block.timestamp;

@@ -50,6 +50,12 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         uint256 _initTokenPool,
         uint256 _feeRate
     ) public initializer {
+        require(_vETH1 != address(0), "Invalid vETH1");
+        require(_vETH2 != address(0), "Invalid vETH2");
+        require(_slpDeposit != address(0), "Invalid SLP deposit address");
+        require(_operator != address(0), "Invalid operator address");
+        require(_feeReceiver != address(0), "Invalid fee receiver address");
+
         super.__Ownable_init();
         super.__ReentrancyGuard_init();
         super.__Pausable_init();

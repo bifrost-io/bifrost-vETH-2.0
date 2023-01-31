@@ -24,6 +24,8 @@ contract vETH2Claim is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     event Claimed(address indexed sender, address target, uint256 amount);
 
     function initialize(address _vETH2, bytes32 _merkleRoot) public initializer {
+        require(_vETH2 != address(0), "Invalid vETH2");
+        require(_merkleRoot != bytes32(0), "Invalid merkle root");
         super.__Ownable_init();
         super.__ReentrancyGuard_init();
 
