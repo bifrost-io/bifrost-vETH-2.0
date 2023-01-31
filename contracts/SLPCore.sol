@@ -53,20 +53,18 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         require(_vETH1 != address(0), "Invalid vETH1");
         require(_vETH2 != address(0), "Invalid vETH2");
         require(_slpDeposit != address(0), "Invalid SLP deposit address");
-        require(_operator != address(0), "Invalid operator address");
-        require(_feeReceiver != address(0), "Invalid fee receiver address");
 
         super.__Ownable_init();
         super.__ReentrancyGuard_init();
         super.__Pausable_init();
 
+        _setFeeRate(_feeRate);
+        _setFeeReceiver(_feeReceiver);
+        _setOperator(_operator);
         vETH1 = _vETH1;
         vETH2 = _vETH2;
         slpDeposit = _slpDeposit;
-        operator = _operator;
-        feeReceiver = _feeReceiver;
         tokenPool = _initTokenPool;
-        _setFeeRate(_feeRate);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -115,11 +113,11 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function setFeeReceiver(address _feeReceiver) external onlyOwner {
-        feeReceiver = _feeReceiver;
+        _setFeeReceiver(_feeReceiver);
     }
 
     function setOperator(address newOperator) external onlyOwner {
-        operator = newOperator;
+        _setOperator(newOperator);
     }
 
     function pause() external onlyOwner {
@@ -133,6 +131,16 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function _setFeeRate(uint256 _feeRate) private {
         require(_feeRate <= FEE_RATE_DENOMINATOR, "Fee rate exceeds range");
         feeRate = _feeRate;
+    }
+
+    function _setFeeReceiver(address _feeReceiver) private {
+        require(_feeReceiver != address(0), "Invalid fee receiver address");
+        feeReceiver = _feeReceiver;
+    }
+
+    function _setOperator(address newOperator) private {
+        require(newOperator != address(0), "Invalid operator address");
+        operator = newOperator;
     }
 
     /* ========== VIEWS ========== */
