@@ -4,11 +4,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 contract MevReward is OwnableUpgradeable {
-    using SafeMathUpgradeable for uint256;
-
     /* ========== EVENTS ========== */
 
     event RewardReceived(address indexed sender, uint256 amount);
@@ -56,12 +53,12 @@ contract MevReward is OwnableUpgradeable {
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     function payReward() external onlyOwner {
-        uint256 rewardAmount = reward.pending.add(reward.perDay.mul(_getTimes()));
-        require(reward.paid.add(rewardAmount) <= reward.total, "Pay amount exceeds range");
+        uint256 rewardAmount = reward.pending + (reward.perDay * _getTimes());
+        require(reward.paid + rewardAmount <= reward.total, "Pay amount exceeds range");
 
-        uint256 paidAt = block.timestamp.div(1 days).mul(1 days);
+        uint256 paidAt = (block.timestamp / (1 days)) * (1 days);
         reward.lastPaidAt = paidAt <= reward.finishAt ? paidAt : reward.finishAt;
-        reward.paid = reward.paid.add(rewardAmount);
+        reward.paid = reward.paid + rewardAmount;
         reward.pending = 0;
 
         AddressUpgradeable.sendValue(payable(rewardReceiver), rewardAmount);
@@ -74,8 +71,8 @@ contract MevReward is OwnableUpgradeable {
     }
 
     function withdrawFee(address receiver, uint256 amount) external onlyOwner {
-        require(fee.claimedFee.add(amount) <= fee.totalFee, "Withdraw amount exceeds range");
-        fee.claimedFee = fee.claimedFee.add(amount);
+        require(fee.claimedFee + amount <= fee.totalFee, "Withdraw amount exceeds range");
+        fee.claimedFee = fee.claimedFee + amount;
 
         AddressUpgradeable.sendValue(payable(receiver), amount);
 
@@ -88,17 +85,17 @@ contract MevReward is OwnableUpgradeable {
     }
 
     receive() external payable {
-        uint256 feeAmount = msg.value.mul(fee.feeRate).div(FEE_RATE_DENOMINATOR);
-        uint256 rewardAmount = msg.value.sub(feeAmount);
+        uint256 feeAmount = (msg.value * fee.feeRate) / FEE_RATE_DENOMINATOR;
+        uint256 rewardAmount = msg.value - feeAmount;
         require(rewardAmount >= REWARD_DURATION, "Reward amount is too low");
 
-        reward.pending = reward.pending.add(reward.perDay.mul(_getTimes()));
-        reward.lastPaidAt = block.timestamp.div(1 days).mul(1 days);
-        reward.finishAt = reward.lastPaidAt.add(REWARD_DURATION_DAYS);
-        reward.total = reward.total.add(rewardAmount);
-        reward.perDay = reward.total.sub(reward.paid).sub(reward.pending).div(REWARD_DURATION);
+        reward.pending = reward.pending + (reward.perDay * _getTimes());
+        reward.lastPaidAt = (block.timestamp / (1 days)) * (1 days);
+        reward.finishAt = reward.lastPaidAt + REWARD_DURATION_DAYS;
+        reward.total = reward.total + rewardAmount;
+        reward.perDay = (reward.total - reward.paid - reward.pending) / REWARD_DURATION;
 
-        fee.totalFee = fee.totalFee.add(feeAmount);
+        fee.totalFee = fee.totalFee + feeAmount;
 
         emit RewardReceived(msg.sender, msg.value);
     }
@@ -107,6 +104,6 @@ contract MevReward is OwnableUpgradeable {
 
     function _getTimes() private view returns (uint256 times) {
         uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
-        times = endAt.sub(reward.lastPaidAt).div(1 days);
+        times = (endAt - reward.lastPaidAt) / (1 days);
     }
 }
