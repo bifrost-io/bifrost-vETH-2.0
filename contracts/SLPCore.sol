@@ -7,12 +7,10 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import "./interfaces/ISLPDeposit.sol";
 import "./interfaces/IVETH.sol";
 
 contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
-    using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     /* ========== EVENTS ========== */
@@ -72,7 +70,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         require(tokenAmount > 0, "Zero amount");
 
         uint256 vTokenAmount = calculateVTokenAmount(tokenAmount);
-        tokenPool = tokenPool.add(tokenAmount);
+        tokenPool = tokenPool + tokenAmount;
         ISLPDeposit(slpDeposit).depositETH{value: tokenAmount}();
         IVETH(vETH2).mint(msg.sender, vTokenAmount);
 
@@ -83,7 +81,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         require(vETH1Amount > 0, "Zero amount");
 
         uint256 vTokenAmount = calculateVTokenAmount(vETH1Amount);
-        tokenPool = tokenPool.add(vETH1Amount);
+        tokenPool = tokenPool + vETH1Amount;
         IERC20Upgradeable(vETH1).safeTransferFrom(msg.sender, DEAD_ADDRESS, vETH1Amount);
         IVETH(vETH2).mint(msg.sender, vTokenAmount);
 
@@ -91,9 +89,9 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function addReward(uint256 amount) external onlyOperator {
-        uint256 tokenFee = amount.mul(feeRate).div(FEE_RATE_DENOMINATOR);
+        uint256 tokenFee = (amount * feeRate) / FEE_RATE_DENOMINATOR;
         uint256 vTokenFee = calculateVTokenAmount(tokenFee);
-        tokenPool = tokenPool.add(amount);
+        tokenPool = tokenPool + amount;
         // Fee: mint vETH to Treasury(multi-sig contract)
         IVETH(vETH2).mint(feeReceiver, vTokenFee);
 
@@ -101,7 +99,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function removeReward(uint256 amount) external onlyOperator {
-        tokenPool = tokenPool.sub(amount);
+        tokenPool = tokenPool - amount;
 
         emit RewardRemoved(msg.sender, amount);
     }
@@ -135,7 +133,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function calculateVTokenAmount(uint256 tokenAmount) public view returns (uint256 vTokenAmount) {
         uint256 vTokenTotalSupply = IERC20Upgradeable(vETH2).totalSupply();
-        vTokenAmount = tokenAmount.mul(vTokenTotalSupply).div(tokenPool);
+        vTokenAmount = (tokenAmount * vTokenTotalSupply) / tokenPool;
     }
 
     /* ========== MODIFIER ========== */
