@@ -20,7 +20,7 @@ contract SLPDeposit is OwnableUpgradeable {
 
     // address of Ethereum 2.0 Deposit Contract
     address public depositContract;
-    // index => merkle root of withdrawal_credentials
+    // batch id => merkle root of withdrawal_credentials
     mapping(uint256 => bytes32) public merkleRoots;
 
     function initialize(address _depositContract) public initializer {
@@ -36,12 +36,12 @@ contract SLPDeposit is OwnableUpgradeable {
     function depositETH() external payable {}
 
     function batchDeposit(
-        uint256 index,
+        uint256 batchId,
         bytes32[] memory proof,
         bool[] memory proofFlags,
         Validator[] memory validators
     ) external onlyOwner {
-        bytes32 root = merkleRoots[index];
+        bytes32 root = merkleRoots[batchId];
         require(root != bytes32(0), "Merkle root not exists");
 
         bytes32[] memory leaves = new bytes32[](validators.length);
@@ -58,10 +58,10 @@ contract SLPDeposit is OwnableUpgradeable {
         }
     }
 
-    function setMerkleRoot(uint256 index, bytes32 merkleRoot) external onlyOwner {
-        require(merkleRoots[index] == bytes32(0), "Merkle root exists");
+    function setMerkleRoot(uint256 batchId, bytes32 merkleRoot) external onlyOwner {
+        require(merkleRoots[batchId] == bytes32(0), "Merkle root exists");
         require(merkleRoot != bytes32(0), "Invalid merkle root");
-        merkleRoots[index] = merkleRoot;
+        merkleRoots[batchId] = merkleRoot;
     }
 
     /* ========== VIEWS ========== */

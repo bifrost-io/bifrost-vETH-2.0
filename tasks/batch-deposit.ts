@@ -10,11 +10,11 @@ task('batch-deposit', 'Batch deposit ETH')
     const depositContract = await ethers.deployContract('DepositContract')
     await slpDeposit.initialize(depositContract.address)
 
-    const index = 0
+    const batchId = 0
     const chainId = network.config.chainId as CHAIN_ID
     const merkleRoot = SLP_DEPOSIT_MERKLE_ROOT[chainId]
-    await slpDeposit.setMerkleRoot(index, merkleRoot)
-    console.log('\x1b[32m%s\x1b[0m', `Merkle root at index 0 is ${await slpDeposit.merkleRoots(index)}`)
+    await slpDeposit.setMerkleRoot(batchId, merkleRoot)
+    console.log('\x1b[32m%s\x1b[0m', `Merkle root at batchId 0 is ${await slpDeposit.merkleRoots(batchId)}`)
 
     try {
       // @ts-ignore
@@ -24,7 +24,7 @@ task('batch-deposit', 'Batch deposit ETH')
       const depositAmount = ethers.utils.parseEther('32').mul(leaves.length)
       await slpDeposit.depositETH({ value: depositAmount })
 
-      await slpDeposit.batchDeposit(index, proof, proofFlags, leaves)
+      await slpDeposit.batchDeposit(batchId, proof, proofFlags, leaves)
     } catch (e) {
       console.log(e)
     }

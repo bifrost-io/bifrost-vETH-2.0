@@ -12,6 +12,7 @@ describe('SLPDeposit', function () {
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
   let attacker: SignerWithAddress
+  const batchId = 0
 
   beforeEach(async function () {
     ;[deployer, newOwner, attacker] = await ethers.getSigners()
@@ -43,34 +44,29 @@ describe('SLPDeposit', function () {
     let validators: any[]
 
     it('setMerkleRoot by owner should be ok', async function () {
-      const index = 0
       const merkleRoot = `0x${crypto.randomBytes(32).toString('hex')}`
-      await slpDeposit.setMerkleRoot(index, merkleRoot)
-      expect(await slpDeposit.merkleRoots(index)).to.equal(merkleRoot)
+      await slpDeposit.setMerkleRoot(batchId, merkleRoot)
+      expect(await slpDeposit.merkleRoots(batchId)).to.equal(merkleRoot)
     })
 
     it('re-setMerkleRoot by owner should revert', async function () {
-      const index = 0
       const merkleRoot = `0x${crypto.randomBytes(32).toString('hex')}`
-      await slpDeposit.setMerkleRoot(index, merkleRoot)
-      await expect(slpDeposit.setMerkleRoot(index, merkleRoot)).to.revertedWith('Merkle root exists')
+      await slpDeposit.setMerkleRoot(batchId, merkleRoot)
+      await expect(slpDeposit.setMerkleRoot(batchId, merkleRoot)).to.revertedWith('Merkle root exists')
     })
 
     it('setMerkleRoot with invalid merkle root should revert', async function () {
-      const index = 0
-      await expect(slpDeposit.setMerkleRoot(index, ethers.constants.HashZero)).to.revertedWith('Invalid merkle root')
+      await expect(slpDeposit.setMerkleRoot(batchId, ethers.constants.HashZero)).to.revertedWith('Invalid merkle root')
     })
 
     it('setMerkleRoot by attacker should revert', async function () {
-      const index = 0
       const merkleRoot = `0x${crypto.randomBytes(32).toString('hex')}`
-      await expect(slpDeposit.connect(attacker).setMerkleRoot(index, merkleRoot)).to.revertedWith(
+      await expect(slpDeposit.connect(attacker).setMerkleRoot(batchId, merkleRoot)).to.revertedWith(
         'Ownable: caller is not the owner'
       )
     })
 
     describe('batchDeposit', function () {
-      let index: number
       let root: string
       let proof: Buffer[]
       let proofFlags: boolean[]
@@ -84,7 +80,6 @@ describe('SLPDeposit', function () {
         ])
         validators = allValidators.slice(10, 60)
 
-        index = 0
         const leaves = allValidators
           .map((v) => v[1])
           .map(ethers.utils.keccak256)
@@ -106,10 +101,10 @@ describe('SLPDeposit', function () {
         expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(depositAmount)
         expect(await ethers.provider.getBalance(depositContract.address)).to.equal(0)
 
-        await slpDeposit.setMerkleRoot(index, root)
+        await slpDeposit.setMerkleRoot(batchId, root)
 
         await slpDeposit.batchDeposit(
-          index,
+          batchId,
           proof.map((buff) => `0x${buff.toString('hex')}`),
           proofFlags,
           validators
@@ -119,22 +114,22 @@ describe('SLPDeposit', function () {
       })
 
       it('batchDeposit invalid proof should revert', async function () {
-        await slpDeposit.setMerkleRoot(index, root)
+        await slpDeposit.setMerkleRoot(batchId, root)
 
         const invalidProof = proof.map((buff) => `0x${buff.toString('hex')}`)
         invalidProof[0] = '0x6f8b74eac672ae152dc2445ce1841d405bc19a1dac2a233939083f73815585bb'
 
-        await expect(slpDeposit.batchDeposit(index, invalidProof, proofFlags, validators)).to.revertedWith(
+        await expect(slpDeposit.batchDeposit(batchId, invalidProof, proofFlags, validators)).to.revertedWith(
           'Merkle proof verification failed'
         )
       })
 
       it('batchDeposit with low balance should revert', async function () {
-        await slpDeposit.setMerkleRoot(index, root)
+        await slpDeposit.setMerkleRoot(batchId, root)
 
         await expect(
           slpDeposit.batchDeposit(
-            index,
+            batchId,
             proof.map((buff) => `0x${buff.toString('hex')}`),
             proofFlags,
             validators
@@ -143,11 +138,11 @@ describe('SLPDeposit', function () {
       })
 
       it('batchDeposit by attacker should revert', async function () {
-        await slpDeposit.setMerkleRoot(index, root)
+        await slpDeposit.setMerkleRoot(batchId, root)
 
         await expect(
           slpDeposit.connect(attacker).batchDeposit(
-            index,
+            batchId,
             proof.map((buff) => `0x${buff.toString('hex')}`),
             proofFlags,
             validators
@@ -158,7 +153,7 @@ describe('SLPDeposit', function () {
       it('batchDeposit without merkle root should revert', async function () {
         await expect(
           slpDeposit.batchDeposit(
-            index,
+            batchId,
             proof.map((buff) => `0x${buff.toString('hex')}`),
             proofFlags,
             validators

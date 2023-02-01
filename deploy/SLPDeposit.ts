@@ -32,11 +32,11 @@ const deployFunction: DeployFunction = async function ({
   })
 
   const slpDeposit = await ethers.getContractAt('SLPDeposit', address)
-  const index = 0
-  if ((await slpDeposit.merkleRoots(index)) === ethers.constants.HashZero) {
+  const batchId = 0
+  if ((await slpDeposit.merkleRoots(batchId)) === ethers.constants.HashZero) {
     const merkleRoot = SLP_DEPOSIT_MERKLE_ROOT[chainId]
-    await slpDeposit.setMerkleRoot(index, merkleRoot)
-    console.log('\x1b[32m%s\x1b[0m', `Merkle root at index 0 is ${await slpDeposit.merkleRoots(index)}`)
+    await slpDeposit.setMerkleRoot(batchId, merkleRoot)
+    console.log('\x1b[32m%s\x1b[0m', `Merkle root at batchId 0 is ${await slpDeposit.merkleRoots(batchId)}`)
   }
 
   console.log('SLPDeposit deployed at', address)
