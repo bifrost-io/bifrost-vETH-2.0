@@ -41,6 +41,8 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     uint256 public feeRate;
 
+    mapping(uint256 => bool) public rewardDays;
+
     function initialize(
         address _vETH1,
         address _vETH2,
@@ -93,6 +95,10 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function addReward(uint256 amount) external onlyOperator {
+        uint256 rewardAt = getTodayTimestamp();
+        require(!rewardDays[rewardAt], "Reward paid today");
+        rewardDays[rewardAt] = true;
+
         uint256 tokenFee = (amount * feeRate) / FEE_RATE_DENOMINATOR;
         uint256 vTokenFee = calculateVTokenAmount(tokenFee);
         tokenPool = tokenPool + amount;
@@ -103,6 +109,10 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function removeReward(uint256 amount) external onlyOperator {
+        uint256 rewardAt = getTodayTimestamp();
+        require(!rewardDays[rewardAt], "Reward paid today");
+        rewardDays[rewardAt] = true;
+
         tokenPool = tokenPool - amount;
 
         emit RewardRemoved(msg.sender, amount);
@@ -148,6 +158,14 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function calculateVTokenAmount(uint256 tokenAmount) public view returns (uint256 vTokenAmount) {
         uint256 vTokenTotalSupply = IERC20Upgradeable(vETH2).totalSupply();
         vTokenAmount = (tokenAmount * vTokenTotalSupply) / tokenPool;
+    }
+
+    function getTodayTimestamp() public view returns (uint256) {
+        return (block.timestamp / (1 days)) * (1 days);
+    }
+
+    function getHistoryETH() public view returns (uint256) {
+        return address(this).balance + completedWithdrawal;
     }
 
     /* ========== MODIFIER ========== */
