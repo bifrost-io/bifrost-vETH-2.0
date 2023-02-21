@@ -35,18 +35,21 @@ contract MevReward is OwnableUpgradeable {
         uint256 claimedFee;
     }
 
+    // record fee
     Fee public fee;
-
+    // record reward
     Reward public reward;
-
+    // reward receiver address
     address public rewardReceiver;
+    // date timestamp at 00:00:00 => reward paid
+    mapping(uint256 => bool) public rewardDays;
 
     function initialize(uint256 _feeRate, address _rewardReceiver) public initializer {
         require(_rewardReceiver != address(0), "Invalid reward receiver address");
         super.__Ownable_init();
 
-        reward.lastPaidAt = block.timestamp;
-        reward.finishAt = block.timestamp;
+        reward.lastPaidAt = getTodayTimestamp();
+        reward.finishAt = reward.lastPaidAt;
         rewardReceiver = _rewardReceiver;
         _setFeeRate(_feeRate);
     }
@@ -54,10 +57,13 @@ contract MevReward is OwnableUpgradeable {
     /* ========== MUTATIVE FUNCTIONS ========== */
 
     function payReward() external onlyOwner {
-        uint256 rewardAmount = reward.pending + (reward.perDay * _getTimes());
+        uint256 paidAt = getTodayTimestamp();
+        require(!rewardDays[paidAt], "Paid today");
+        rewardDays[paidAt] = true;
+
+        uint256 rewardAmount = reward.pending + (reward.perDay * getDays());
         require(reward.paid + rewardAmount <= reward.total, "Pay amount exceeds range");
 
-        uint256 paidAt = (block.timestamp / (1 days)) * (1 days);
         reward.lastPaidAt = paidAt <= reward.finishAt ? paidAt : reward.finishAt;
         reward.paid = reward.paid + rewardAmount;
         reward.pending = 0;
@@ -90,8 +96,8 @@ contract MevReward is OwnableUpgradeable {
         uint256 rewardAmount = msg.value - feeAmount;
         require(rewardAmount >= REWARD_DURATION, "Reward amount is too low");
 
-        reward.pending = reward.pending + (reward.perDay * _getTimes());
-        reward.lastPaidAt = (block.timestamp / (1 days)) * (1 days);
+        reward.pending = reward.pending + (reward.perDay * getDays());
+        reward.lastPaidAt = getTodayTimestamp();
         reward.finishAt = reward.lastPaidAt + REWARD_DURATION_DAYS;
         reward.total = reward.total + rewardAmount;
         reward.perDay = (reward.total - reward.paid - reward.pending) / REWARD_DURATION;
@@ -103,7 +109,11 @@ contract MevReward is OwnableUpgradeable {
 
     /* ========== VIEWS ========== */
 
-    function _getTimes() private view returns (uint256 times) {
+    function getTodayTimestamp() public view returns (uint256) {
+        return (block.timestamp / (1 days)) * (1 days);
+    }
+
+    function getDays() private view returns (uint256 times) {
         uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
         times = (endAt - reward.lastPaidAt) / (1 days);
     }
