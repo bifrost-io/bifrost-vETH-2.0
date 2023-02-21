@@ -31,8 +31,8 @@ describe('MevReward', function () {
     expect(reward.perDay).to.equal(0)
     expect(reward.paid).to.equal(0)
     expect(reward.pending).to.equal(0)
-    expect(reward.lastPaidAt).to.equal(now)
-    expect(reward.finishAt).to.equal(now)
+    expect(reward.lastPaidAt).to.equal(BigNumber.from(now).div(time.duration.days(1)).mul(time.duration.days(1)))
+    expect(reward.finishAt).to.equal(BigNumber.from(now).div(time.duration.days(1)).mul(time.duration.days(1)))
 
     const fee = await mevReward.fee()
     expect(fee.feeRate).to.equal(100)
