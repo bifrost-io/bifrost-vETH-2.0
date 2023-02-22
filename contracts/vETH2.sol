@@ -22,7 +22,7 @@ contract vETH2 is ERC20Pausable, Ownable {
         super._mint(account, amount);
     }
 
-    function burn(address account, uint amount) external onlyOwner {
+    function burn(address account, uint amount) external onlyOperator {
         super._burn(account, amount);
     }
 
