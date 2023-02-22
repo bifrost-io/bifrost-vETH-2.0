@@ -13,6 +13,11 @@ import "./interfaces/IVETH.sol";
 contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    struct Withdrawal {
+        uint256 queued;
+        uint256 pending;
+    }
+
     /* ========== EVENTS ========== */
 
     event Deposited(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
@@ -20,28 +25,30 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     event RewardAdded(address indexed sender, uint256 amount, uint256 fee);
     event RewardRemoved(address indexed sender, uint256 amount);
 
+    event WithdrawRequested(address indexed sender, uint256 vETHAmount, uint256 ethAmount);
+    event WithdrawCompleted(address indexed sender, uint256 ethAmount);
+
     /* ========== CONSTANTS ========== */
 
     address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant FEE_RATE_DENOMINATOR = 1e4;
+    uint256 public constant DEPOSIT_ETH = 32 ether;
 
     /* ========== STATE VARIABLES ========== */
 
     address public vETH1;
-
     address public vETH2;
-
     address public slpDeposit;
-
     address public operator;
-
     address public feeReceiver;
-
     uint256 public tokenPool;
-
     uint256 public feeRate;
-
     mapping(uint256 => bool) public rewardDays;
+
+    uint256 public queuedWithdrawal;
+    uint256 public completedWithdrawal;
+    uint256 public withdrawalNodeNumber;
+    mapping(address => Withdrawal) public withdrawals;
 
     function initialize(
         address _vETH1,
@@ -92,6 +99,45 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         IVETH(vETH2).mint(msg.sender, vTokenAmount);
 
         emit Renewed(msg.sender, vETH1Amount, vTokenAmount);
+    }
+
+    function withdrawRequest(uint256 vETHAmount) external {
+        Withdrawal storage withdrawal = withdrawals[msg.sender];
+        // calculate ETH
+        uint256 ethAmount = calculateTokenAmount(vETHAmount);
+        withdrawal.pending += ethAmount;
+        withdrawal.queued = queuedWithdrawal;
+        queuedWithdrawal += ethAmount;
+        IVETH(vETH2).burn(msg.sender, ethAmount);
+
+        emit WithdrawRequested(msg.sender, vETHAmount, ethAmount);
+    }
+
+    function withdrawComplete(uint256 ethAmount) external {
+        Withdrawal storage withdrawal = withdrawals[msg.sender];
+
+        require(ethAmount <= withdrawal.pending, "Insufficient withdrawal amount");
+        uint256 totalETH = getHistoryETH();
+        require(withdrawalNodeNumber * DEPOSIT_ETH <= totalETH, "Exceed total ETH");
+        require(withdrawal.queued + ethAmount <= totalETH, "Exceed total ETH");
+
+        withdrawal.pending -= ethAmount;
+        completedWithdrawal += ethAmount;
+        payable(msg.sender).transfer(ethAmount);
+
+        emit WithdrawCompleted(msg.sender, ethAmount);
+    }
+
+    function adjustWithdrawalNodeNumber(uint256 n) external onlyOwner {
+        require((withdrawalNodeNumber + n) * DEPOSIT_ETH <= getHistoryETH(), "Exceed total ETH");
+        withdrawalNodeNumber += n;
+    }
+
+    function withdrawReward() external onlyOwner {
+        uint256 totalETH = getHistoryETH();
+        require(withdrawalNodeNumber * DEPOSIT_ETH <= totalETH, "Exceed total ETH");
+        uint256 rewardAmount = totalETH - (withdrawalNodeNumber * DEPOSIT_ETH);
+        ISLPDeposit(slpDeposit).depositETH{value: rewardAmount}();
     }
 
     function addReward(uint256 amount) external onlyOperator {
@@ -158,6 +204,11 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function calculateVTokenAmount(uint256 tokenAmount) public view returns (uint256 vTokenAmount) {
         uint256 vTokenTotalSupply = IERC20Upgradeable(vETH2).totalSupply();
         vTokenAmount = (tokenAmount * vTokenTotalSupply) / tokenPool;
+    }
+
+    function calculateTokenAmount(uint256 vTokenAmount) public view returns (uint256 tokenAmount) {
+        uint256 vTokenTotalSupply = IERC20Upgradeable(vETH2).totalSupply();
+        tokenAmount = (vTokenAmount * tokenPool) / vTokenTotalSupply;
     }
 
     function getTodayTimestamp() public view returns (uint256) {
