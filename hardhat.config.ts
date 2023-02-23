@@ -36,6 +36,11 @@ const config: HardhatUserConfig = {
       accounts,
       chainId: 5,
     },
+    zhejiang: {
+      url: `https://rpc.zhejiang.ethpandaops.io`,
+      accounts,
+      chainId: 1337803,
+    },
   },
   solidity: {
     compilers: [
