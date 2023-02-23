@@ -1,14 +1,20 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 
-const deployFunction: DeployFunction = async function ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) {
-  console.log('Running DepositContract deploy script')
+const deployFunction: DeployFunction = async function ({
+  deployments,
+  getNamedAccounts,
+  network,
+}: HardhatRuntimeEnvironment) {
+  if (network.name === 'hardhat') {
+    console.log('Running DepositContract deploy script')
 
-  const { deploy } = deployments
-  const { deployer } = await getNamedAccounts()
-  const { address } = await deploy('DepositContract', { from: deployer })
+    const { deploy } = deployments
+    const { deployer } = await getNamedAccounts()
+    const { address } = await deploy('DepositContract', { from: deployer })
 
-  console.log('DepositContract deployed at', address)
+    console.log('DepositContract deployed at', address)
+  }
 }
 
 export default deployFunction
