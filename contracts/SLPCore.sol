@@ -101,7 +101,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit Renewed(msg.sender, vETH1Amount, vTokenAmount);
     }
 
-    function withdrawRequest(uint256 vETHAmount) external {
+    function withdrawRequest(uint256 vETHAmount) external nonReentrant whenNotPaused {
         Withdrawal storage withdrawal = withdrawals[msg.sender];
         // calculate ETH
         uint256 ethAmount = calculateTokenAmount(vETHAmount);
@@ -113,7 +113,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit WithdrawRequested(msg.sender, vETHAmount, ethAmount);
     }
 
-    function withdrawComplete(uint256 ethAmount) external {
+    function withdrawComplete(uint256 ethAmount) external nonReentrant whenNotPaused {
         Withdrawal storage withdrawal = withdrawals[msg.sender];
 
         require(ethAmount <= withdrawal.pending, "Insufficient withdrawal amount");
@@ -128,12 +128,12 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit WithdrawCompleted(msg.sender, ethAmount);
     }
 
-    function adjustWithdrawalNodeNumber(uint256 n) external onlyOwner {
+    function adjustWithdrawalNodeNumber(uint256 n) external onlyOperator {
         require((withdrawalNodeNumber + n) * DEPOSIT_ETH <= getHistoryETH(), "Exceed total ETH");
         withdrawalNodeNumber += n;
     }
 
-    function withdrawReward() external onlyOwner {
+    function withdrawReward() external onlyOperator {
         uint256 totalETH = getHistoryETH();
         require(withdrawalNodeNumber * DEPOSIT_ETH <= totalETH, "Exceed total ETH");
         uint256 rewardAmount = totalETH - (withdrawalNodeNumber * DEPOSIT_ETH);
