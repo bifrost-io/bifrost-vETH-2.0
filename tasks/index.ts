@@ -1,3 +1,7 @@
 import './accounts'
 import './batch-deposit'
 import './user-claim'
+import './veth1-mint'
+import './veth2-mint'
+import './veth2-set-operator'
+import './set-merkle-root'
