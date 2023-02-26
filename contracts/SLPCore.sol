@@ -25,7 +25,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     event RewardAdded(address indexed sender, uint256 amount, uint256 fee);
     event RewardRemoved(address indexed sender, uint256 amount);
 
-    event WithdrawRequested(address indexed sender, uint256 vETHAmount, uint256 ethAmount);
+    event WithdrawRequested(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
     event WithdrawCompleted(address indexed sender, uint256 ethAmount);
 
     /* ========== CONSTANTS ========== */
@@ -93,39 +93,45 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function renew(uint256 vETH1Amount) external nonReentrant whenNotPaused {
         require(vETH1Amount > 0, "Zero amount");
 
-        uint256 vTokenAmount = calculateVTokenAmount(vETH1Amount);
-        tokenPool = tokenPool + vETH1Amount;
-        IERC20Upgradeable(vETH1).safeTransferFrom(msg.sender, DEAD_ADDRESS, vETH1Amount);
+        uint256 tokenAmount = vETH1Amount;
+        uint256 vTokenAmount = calculateVTokenAmount(tokenAmount);
+        tokenPool = tokenPool + tokenAmount;
+        IERC20Upgradeable(vETH1).safeTransferFrom(msg.sender, DEAD_ADDRESS, tokenAmount);
         IVETH(vETH2).mint(msg.sender, vTokenAmount);
 
-        emit Renewed(msg.sender, vETH1Amount, vTokenAmount);
+        emit Renewed(msg.sender, tokenAmount, vTokenAmount);
     }
 
-    function withdrawRequest(uint256 vETHAmount) external nonReentrant whenNotPaused {
+    function withdrawRequest(uint256 vTokenAmount) external nonReentrant whenNotPaused {
         Withdrawal storage withdrawal = withdrawals[msg.sender];
         // calculate ETH
-        uint256 ethAmount = calculateTokenAmount(vETHAmount);
-        withdrawal.pending += ethAmount;
+        uint256 tokenAmount = calculateTokenAmount(vTokenAmount);
+        withdrawal.pending = withdrawal.pending + tokenAmount;
         withdrawal.queued = queuedWithdrawal;
-        queuedWithdrawal += ethAmount;
-        IVETH(vETH2).burn(msg.sender, ethAmount);
+        queuedWithdrawal = queuedWithdrawal + tokenAmount;
+        tokenPool = tokenPool - tokenAmount;
+        IVETH(vETH2).burn(msg.sender, tokenAmount);
 
-        emit WithdrawRequested(msg.sender, vETHAmount, ethAmount);
+        emit WithdrawRequested(msg.sender, tokenAmount, vTokenAmount);
     }
 
-    function withdrawComplete(uint256 ethAmount) external nonReentrant whenNotPaused {
+    function withdrawComplete(uint256 tokenAmount) external nonReentrant whenNotPaused {
         Withdrawal storage withdrawal = withdrawals[msg.sender];
 
-        require(ethAmount <= withdrawal.pending, "Insufficient withdrawal amount");
+        require(tokenAmount <= withdrawal.pending, "Insufficient withdrawal amount");
+        if (tokenAmount == 0) {
+            // withdraw total pending amount
+            tokenAmount = withdrawal.pending;
+        }
         uint256 totalETH = getHistoryETH();
         require(withdrawalNodeNumber * DEPOSIT_ETH <= totalETH, "Exceed total ETH");
-        require(withdrawal.queued + ethAmount <= totalETH, "Exceed total ETH");
+        require(withdrawal.queued + tokenAmount <= totalETH, "Exceed total ETH");
 
-        withdrawal.pending -= ethAmount;
-        completedWithdrawal += ethAmount;
-        payable(msg.sender).transfer(ethAmount);
+        withdrawal.pending = withdrawal.pending - tokenAmount;
+        completedWithdrawal = completedWithdrawal + tokenAmount;
+        payable(msg.sender).transfer(tokenAmount);
 
-        emit WithdrawCompleted(msg.sender, ethAmount);
+        emit WithdrawCompleted(msg.sender, tokenAmount);
     }
 
     function adjustWithdrawalNodeNumber(uint256 n) external onlyOperator {
