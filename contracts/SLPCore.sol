@@ -129,7 +129,8 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
         withdrawal.pending = withdrawal.pending - tokenAmount;
         completedWithdrawal = completedWithdrawal + tokenAmount;
-        payable(msg.sender).transfer(tokenAmount);
+
+        _sendValue(payable(msg.sender), tokenAmount);
 
         emit WithdrawCompleted(msg.sender, tokenAmount);
     }
@@ -203,6 +204,13 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function _setOperator(address newOperator) private {
         require(newOperator != address(0), "Invalid operator address");
         operator = newOperator;
+    }
+
+    function _sendValue(address payable recipient, uint256 amount) private {
+        require(address(this).balance >= amount, "Insufficient balance");
+
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "Unable to send value");
     }
 
     /* ========== VIEWS ========== */

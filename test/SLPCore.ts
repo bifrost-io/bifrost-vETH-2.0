@@ -36,9 +36,8 @@ describe('SLPCore', function () {
     slpDeposit = await SLPDeposit.deploy()
     slpCore = await SLPCore.deploy()
 
-    const initTokenPoolAmount = ethers.utils.parseEther('1')
     const feeRate = 100
-    await vETH2.mint(deployer.address, initTokenPoolAmount)
+    await vETH2.mint(deployer.address, ethers.utils.parseEther('1'))
     await slpDeposit.initialize(depositContract.address)
     await slpCore.initialize(
       vETH1.address,
@@ -46,7 +45,6 @@ describe('SLPCore', function () {
       slpDeposit.address,
       operator.address,
       feeReceiver.address,
-      initTokenPoolAmount,
       feeRate
     )
     await vETH2.setOperator(slpCore.address)
