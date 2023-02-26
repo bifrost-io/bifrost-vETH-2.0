@@ -73,7 +73,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         vETH1 = _vETH1;
         vETH2 = _vETH2;
         slpDeposit = _slpDeposit;
-        tokenPool = _initTokenPool;
+        tokenPool = IERC20Upgradeable(_vETH2).totalSupply();
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
