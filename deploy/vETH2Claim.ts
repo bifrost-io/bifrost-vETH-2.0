@@ -1,6 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { CHAIN_ID, VETH2_CLAIM_MERKLE_ROOT } from '../constants/constants'
+import { ethers } from 'hardhat'
 
 const deployFunction: DeployFunction = async function ({
   deployments,
@@ -32,6 +33,10 @@ const deployFunction: DeployFunction = async function ({
   })
 
   console.log('vETH2Claim deployed at', address)
+
+  const vETH2Contract = await ethers.getContractAt('vETH2', (await deployments.get('vETH2')).address)
+  const tx = await vETH2Contract.mint(address, ethers.utils.parseEther('1'))
+  console.log(`vETH2 mint: ${tx.hash}`)
 }
 
 export default deployFunction

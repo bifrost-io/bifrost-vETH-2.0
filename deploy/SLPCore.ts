@@ -19,7 +19,6 @@ const deployFunction: DeployFunction = async function ({
   const SLPDeposit = (await deployments.get('SLPDeposit')).address
   const operator = SLP_OPERATOR_ADDRESS[chainId]
   const feeReceiver = SLP_FEE_RECEIVER_ADDRESS[chainId]
-  const initTokenPool = ethers.utils.parseEther('1')
   // 500/10000 = 5%
   const feeRate = 500
 
@@ -32,7 +31,7 @@ const deployFunction: DeployFunction = async function ({
       execute: {
         init: {
           methodName: 'initialize',
-          args: [vETH1, vETH2, SLPDeposit, operator, feeReceiver, initTokenPool, feeRate],
+          args: [vETH1, vETH2, SLPDeposit, operator, feeReceiver, feeRate],
         },
       },
     },
@@ -43,6 +42,6 @@ const deployFunction: DeployFunction = async function ({
 
 export default deployFunction
 
-deployFunction.dependencies = ['vETH2', 'SLPDeposit']
+deployFunction.dependencies = ['vETH2', 'SLPDeposit', 'vETH2Claim']
 
 deployFunction.tags = ['SLPCore']
