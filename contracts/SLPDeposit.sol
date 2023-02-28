@@ -2,9 +2,10 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
-import "./interfaces/IDepositContract.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+// solhint-disable-next-line max-line-length
+import {MerkleProofUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
+import {IDepositContract} from "./interfaces/IDepositContract.sol";
 
 contract SLPDeposit is OwnableUpgradeable {
     /* solhint-disable var-name-mixedcase */
