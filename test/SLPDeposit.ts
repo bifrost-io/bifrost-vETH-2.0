@@ -97,7 +97,9 @@ describe('SLPDeposit', function () {
 
       it('batchDeposit by owner should be ok', async function () {
         const depositAmount = ethers.utils.parseEther('32').mul(validators.length)
-        await slpDeposit.depositETH({ value: depositAmount })
+        await expect(slpDeposit.depositETH({ value: depositAmount }))
+          .to.emit(slpDeposit, 'EthDeposited')
+          .withArgs(deployer.address, depositAmount)
         expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(depositAmount)
         expect(await ethers.provider.getBalance(depositContract.address)).to.equal(0)
 

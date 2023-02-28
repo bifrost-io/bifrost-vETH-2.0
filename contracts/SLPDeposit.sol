@@ -17,6 +17,10 @@ contract SLPDeposit is OwnableUpgradeable {
     }
     /* solhint-enable var-name-mixedcase */
 
+    /* ========== EVENTS ========== */
+
+    event EthDeposited(address indexed sender, uint256 tokenAamount);
+
     /* ========== STATE VARIABLES ========== */
 
     // address of Ethereum 2.0 Deposit Contract
@@ -33,8 +37,9 @@ contract SLPDeposit is OwnableUpgradeable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    // solhint-disable-next-line no-empty-blocks
-    function depositETH() external payable {}
+    function depositETH() external payable {
+        emit EthDeposited(msg.sender, msg.value);
+    }
 
     function batchDeposit(
         uint256 batchId,
