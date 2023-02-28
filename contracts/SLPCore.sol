@@ -22,11 +22,12 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     event Deposited(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
     event Renewed(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
-    event RewardAdded(address indexed sender, uint256 amount, uint256 fee);
-    event RewardRemoved(address indexed sender, uint256 amount);
 
-    event WithdrawRequested(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
-    event WithdrawCompleted(address indexed sender, uint256 ethAmount);
+    event RewardAdded(address indexed sender, uint256 tokenAamount, uint256 vTokenfee);
+    event RewardRemoved(address indexed sender, uint256 tokenAmount);
+
+    event WithdrawalRequested(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
+    event WithdrawalCompleted(address indexed sender, uint256 tokenAmount);
 
     /* ========== CONSTANTS ========== */
 
@@ -112,30 +113,28 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         tokenPool = tokenPool - tokenAmount;
         IVETH(vETH2).burn(msg.sender, tokenAmount);
 
-        emit WithdrawRequested(msg.sender, tokenAmount, vTokenAmount);
+        emit WithdrawalRequested(msg.sender, tokenAmount, vTokenAmount);
     }
 
     function withdrawComplete(uint256 tokenAmount) external nonReentrant whenNotPaused {
         Withdrawal storage withdrawal = withdrawals[msg.sender];
 
-        require(tokenAmount <= withdrawal.pending, "Insufficient withdrawal amount");
         if (tokenAmount == 0) {
             // withdraw total pending amount
             tokenAmount = withdrawal.pending;
         }
-        uint256 totalETH = getHistoryETH();
-        require(withdrawalNodeNumber * DEPOSIT_ETH <= totalETH, "Exceed total ETH");
-        require(withdrawal.queued + tokenAmount <= totalETH, "Exceed total ETH");
+
+        require(tokenAmount <= withdrawal.pending, "Exceed permitted amount");
+        require(tokenAmount <= canWithdrawalAmount(msg.sender), "Insufficient withdrawal amount");
 
         withdrawal.pending = withdrawal.pending - tokenAmount;
         completedWithdrawal = completedWithdrawal + tokenAmount;
-
         _sendValue(payable(msg.sender), tokenAmount);
 
-        emit WithdrawCompleted(msg.sender, tokenAmount);
+        emit WithdrawalCompleted(msg.sender, tokenAmount);
     }
 
-    function adjustWithdrawalNodeNumber(uint256 n) external onlyOperator {
+    function increaseWithdrawalNodeNumber(uint256 n) external onlyOperator {
         require((withdrawalNodeNumber + n) * DEPOSIT_ETH <= getHistoryETH(), "Exceed total ETH");
         withdrawalNodeNumber += n;
     }
@@ -155,7 +154,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         uint256 tokenFee = (amount * feeRate) / FEE_RATE_DENOMINATOR;
         uint256 vTokenFee = calculateVTokenAmount(tokenFee);
         tokenPool = tokenPool + amount;
-        // Fee: mint vETH to Treasury(multi-sig contract)
+        // Fee: mint vETH as reward fee to Treasury
         IVETH(vETH2).mint(feeReceiver, vTokenFee);
 
         emit RewardAdded(msg.sender, amount, vTokenFee);
@@ -231,6 +230,17 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function getHistoryETH() public view returns (uint256) {
         return address(this).balance + completedWithdrawal;
+    }
+
+    function canWithdrawalAmount(address target) public view returns (uint256) {
+        Withdrawal memory withdrawal = withdrawals[target];
+        if (withdrawal.queued >= withdrawalNodeNumber * DEPOSIT_ETH) {
+            return 0;
+        } else if (withdrawal.pending > address(this).balance) {
+            return address(this).balance;
+        } else {
+            return withdrawal.pending;
+        }
     }
 
     /* ========== MODIFIER ========== */
