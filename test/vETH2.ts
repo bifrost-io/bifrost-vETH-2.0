@@ -103,7 +103,9 @@ describe('vETH2 Token', function () {
     await vETH2.connect(operator).mint(newOwner.address, amount)
 
     await vETH2.pause()
-    await expect(vETH2.connect(newOwner).transfer(receiver.address, amount)).revertedWith('Pausable: paused')
+    await expect(vETH2.connect(newOwner).transfer(receiver.address, amount)).revertedWith(
+      'ERC20Pausable: token transfer while paused'
+    )
     await vETH2.unpause()
     await vETH2.connect(newOwner).transfer(receiver.address, amount)
   })
@@ -115,7 +117,7 @@ describe('vETH2 Token', function () {
     await vETH2.pause()
     await vETH2.connect(newOwner).approve(receiver.address, amount)
     await expect(vETH2.connect(receiver).transferFrom(newOwner.address, receiver.address, amount)).revertedWith(
-      'Pausable: paused'
+      'ERC20Pausable: token transfer while paused'
     )
     await vETH2.unpause()
     await vETH2.connect(receiver).transferFrom(newOwner.address, receiver.address, amount)

@@ -38,18 +38,6 @@ contract vETH2 is ERC20Pausable, Ownable {
         operator = _operator;
     }
 
-    function transfer(address recipient, uint256 amount) public override whenNotPaused returns (bool) {
-        return super.transfer(recipient, amount);
-    }
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) public override whenNotPaused returns (bool) {
-        return super.transferFrom(sender, recipient, amount);
-    }
-
     /* ========== MODIFIER ========== */
 
     modifier onlyOperator() {
