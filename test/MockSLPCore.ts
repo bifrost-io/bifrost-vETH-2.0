@@ -264,6 +264,39 @@ describe('MockSLPCore', function () {
       expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('2'))
     })
 
+    it('increaseWithdrawalNodeNumber should be ok', async function () {
+      await deployer.sendTransaction({
+        to: slpCore.address,
+        value: ethers.utils.parseEther('32'),
+      })
+      expect(await slpCore.withdrawalNodeNumber()).to.equal(0)
+      await slpCore.connect(operator).increaseWithdrawalNodeNumber(1)
+      expect(await slpCore.withdrawalNodeNumber()).to.equal(1)
+
+      await deployer.sendTransaction({
+        to: slpCore.address,
+        value: ethers.utils.parseEther('320'),
+      })
+      await slpCore.connect(operator).increaseWithdrawalNodeNumber(10)
+      expect(await slpCore.withdrawalNodeNumber()).to.equal(11)
+    })
+
+    it('increaseWithdrawalNodeNumber exceed total ETH should revert', async function () {
+      await deployer.sendTransaction({
+        to: slpCore.address,
+        value: ethers.utils.parseEther('31.99999'),
+      })
+      await expect(slpCore.connect(operator).increaseWithdrawalNodeNumber(1)).to.revertedWith('Exceed total ETH')
+
+      await deployer.sendTransaction({
+        to: slpCore.address,
+        value: ethers.utils.parseEther('320'),
+      })
+      await slpCore.connect(operator).increaseWithdrawalNodeNumber(10)
+      expect(await slpCore.withdrawalNodeNumber()).to.equal(10)
+      await expect(slpCore.connect(operator).increaseWithdrawalNodeNumber(1)).to.revertedWith('Exceed total ETH')
+    })
+
     it('withdrawRequest should be ok', async function () {
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('3'))
 
