@@ -297,7 +297,7 @@ describe('MockSLPCore', function () {
       await expect(slpCore.connect(operator).increaseWithdrawalNodeNumber(1)).to.revertedWith('Exceed total ETH')
     })
 
-    it('withdrawRequest should be ok', async function () {
+    it('withdrawRequest and withdrawComplete should be ok', async function () {
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('3'))
 
       const vETHAmount = ethers.utils.parseEther('0.1')
@@ -325,7 +325,7 @@ describe('MockSLPCore', function () {
 
       await deployer.sendTransaction({
         to: slpCore.address,
-        value: ethers.utils.parseEther('33'),
+        value: ethers.utils.parseEther('32'),
       })
 
       await slpCore.connect(operator).increaseWithdrawalNodeNumber(1)
@@ -337,6 +337,23 @@ describe('MockSLPCore', function () {
       await expect(slpCore.connect(user2).withdrawComplete(ethAmount))
         .to.emit(slpCore, 'WithdrawalCompleted')
         .withArgs(user2.address, ethAmount)
+    })
+
+    it('withdrawRequest and withdrawComplete should revert', async function () {
+      const vETHAmount = ethers.utils.parseEther('0.1')
+      const ethAmount = ethers.utils.parseEther('0.1')
+      await vETH2.connect(user1).approve(slpCore.address, vETHAmount)
+      await expect(slpCore.connect(user1).withdrawRequest(vETHAmount))
+        .to.emit(slpCore, 'WithdrawalRequested')
+        .withArgs(user1.address, vETHAmount, ethAmount)
+
+      const withdrawalUser1 = await slpCore.withdrawals(user1.address)
+      expect(withdrawalUser1.pending).to.equal(ethers.utils.parseEther('0.1'))
+      expect(withdrawalUser1.queued).to.equal(0)
+      expect(await slpCore.queuedWithdrawal()).to.equal(ethers.utils.parseEther('0.1'))
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('2.9'))
+
+      await expect(slpCore.connect(user1).withdrawComplete(ethAmount)).revertedWith('Insufficient withdrawal amount')
     })
   })
 })
