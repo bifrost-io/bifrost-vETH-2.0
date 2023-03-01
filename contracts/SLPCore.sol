@@ -234,10 +234,19 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function canWithdrawalAmount(address target) public view returns (uint256) {
         Withdrawal memory withdrawal = withdrawals[target];
-        if (withdrawal.queued >= withdrawalNodeNumber * DEPOSIT_ETH) {
+
+        if (withdrawalNodeNumber * DEPOSIT_ETH <= withdrawal.queued) {
             return 0;
-        } else if (withdrawal.pending > address(this).balance) {
-            return address(this).balance;
+        }
+        if (getHistoryETH() <= withdrawal.queued) {
+            return 0;
+        }
+
+        uint256 amount1 = withdrawalNodeNumber * DEPOSIT_ETH - withdrawal.queued;
+        uint256 amount2 = getHistoryETH() - withdrawal.queued;
+        uint256 availableWithdrawalAmount = amount1 < amount2 ? amount1 : amount2;
+        if (withdrawal.pending > availableWithdrawalAmount) {
+            return availableWithdrawalAmount;
         } else {
             return withdrawal.pending;
         }

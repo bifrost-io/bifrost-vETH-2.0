@@ -330,6 +330,9 @@ describe('MockSLPCore', function () {
 
       await slpCore.connect(operator).increaseWithdrawalNodeNumber(1)
 
+      expect(await slpCore.canWithdrawalAmount(user1.address)).to.equal(ethers.utils.parseEther('0.1'))
+      expect(await slpCore.canWithdrawalAmount(user2.address)).to.equal(ethers.utils.parseEther('0.1'))
+
       await expect(slpCore.connect(user1).withdrawComplete(ethAmount))
         .to.emit(slpCore, 'WithdrawalCompleted')
         .withArgs(user1.address, ethAmount)
