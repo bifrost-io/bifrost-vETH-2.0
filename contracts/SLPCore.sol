@@ -208,9 +208,9 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         feeReceiver = _feeReceiver;
     }
 
-    function _setOperator(address newOperator) private {
-        require(newOperator != address(0), "Invalid operator address");
-        operator = newOperator;
+    function _setOperator(address _newOperator) private {
+        require(_newOperator != address(0), "Invalid operator address");
+        operator = _newOperator;
     }
 
     function _sendValue(address payable recipient, uint256 amount) private {
