@@ -36,7 +36,7 @@ const deployFunction: DeployFunction = async function ({
 
   const vETH2Contract = await ethers.getContractAt('vETH2', (await deployments.get('vETH2')).address)
   const tx = await vETH2Contract.mint(address, ethers.utils.parseEther('1'))
-  console.log(`vETH2 mint: ${tx.hash}`)
+  console.log(`Call vETH2.mint: ${tx.hash}`)
 }
 
 export default deployFunction
