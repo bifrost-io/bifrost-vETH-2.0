@@ -7,8 +7,6 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/se
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 // solhint-disable-next-line max-line-length
 import {MerkleProofUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
-import {IVETH} from "./interfaces/IVETH.sol";
-import {IDepositContract} from "./interfaces/IDepositContract.sol";
 
 // solhint-disable-next-line contract-name-camelcase
 contract vETH2Claim is OwnableUpgradeable, ReentrancyGuardUpgradeable {
