@@ -192,7 +192,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function setWithdrawalVault(address _withdrawalVault) external onlyOwner {
-        require(_withdrawalVault != address(0), "Invalid operator address");
+        require(_withdrawalVault != address(0), "Invalid withdrawal vault address");
         withdrawalVault = _withdrawalVault;
     }
 
