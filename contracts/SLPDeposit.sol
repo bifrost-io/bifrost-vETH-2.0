@@ -5,7 +5,21 @@ pragma solidity ^0.8.0;
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 // solhint-disable-next-line max-line-length
 import {MerkleProofUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
-import {IDepositContract} from "./interfaces/IDepositContract.sol";
+
+interface IDepositContract {
+    /// @notice Submit a Phase 0 DepositData object.
+    /// @param pubkey A BLS12-381 public key.
+    /// @param withdrawal_credentials Commitment to a public key for withdrawals.
+    /// @param signature A BLS12-381 signature.
+    /// @param deposit_data_root The SHA-256 hash of the SSZ-encoded DepositData object.
+    /// Used as a protection against malformed input.
+    function deposit(
+        bytes calldata pubkey,
+        bytes calldata withdrawal_credentials,
+        bytes calldata signature,
+        bytes32 deposit_data_root
+    ) external payable;
+}
 
 contract SLPDeposit is OwnableUpgradeable {
     /* solhint-disable var-name-mixedcase */
@@ -24,7 +38,7 @@ contract SLPDeposit is OwnableUpgradeable {
     /* ========== STATE VARIABLES ========== */
 
     // address of Ethereum 2.0 Deposit Contract
-    address public depositContract;
+    IDepositContract public depositContract;
     // batch id => merkle root of withdrawal_credentials
     mapping(uint256 => bytes32) public merkleRoots;
 
@@ -32,7 +46,7 @@ contract SLPDeposit is OwnableUpgradeable {
         require(_depositContract != address(0), "Invalid deposit contract");
         super.__Ownable_init();
 
-        depositContract = _depositContract;
+        depositContract = IDepositContract(_depositContract);
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
@@ -75,7 +89,7 @@ contract SLPDeposit is OwnableUpgradeable {
     function innerDeposit(Validator memory validator) private {
         uint amount = 32 ether;
         require(address(this).balance >= amount, "Insufficient balance");
-        IDepositContract(depositContract).deposit{value: amount}(
+        depositContract.deposit{value: amount}(
             validator.pubkey,
             validator.withdrawal_credentials,
             validator.signature,
