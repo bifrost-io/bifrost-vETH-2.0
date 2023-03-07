@@ -48,6 +48,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     address public vETH1;
     address public vETH2;
     address public slpDeposit;
+    address public withdrawalVault;
     address public operator;
     address public feeReceiver;
     uint256 public tokenPool;
@@ -190,12 +191,22 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         _setOperator(newOperator);
     }
 
+    function setWithdrawalVault(address _withdrawalVault) external onlyOwner {
+        require(_withdrawalVault != address(0), "Invalid operator address");
+        withdrawalVault = _withdrawalVault;
+    }
+
     function pause() external onlyOwner {
         super._pause();
     }
 
     function unpause() external onlyOwner {
         super._unpause();
+    }
+
+    function depositWithdrawals() external payable {
+        require(msg.sender == withdrawalVault, "Invalid sender");
+        require(withdrawalVault != address(0), "Withdrawal vault not set");
     }
 
     function _setFeeRate(uint256 _feeRate) private {
