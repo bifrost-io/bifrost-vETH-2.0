@@ -7,8 +7,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
-  const feeRate = 0 // not used
-  const rewardReceiver = (await deployments.get('SLPDeposit')).address
+  const slpDeposit = (await deployments.get('SLPDeposit')).address
 
   const { address } = await deploy('MevReward', {
     from: deployer,
@@ -19,7 +18,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
       execute: {
         init: {
           methodName: 'initialize',
-          args: [feeRate, rewardReceiver],
+          args: [slpDeposit],
         },
       },
     },
