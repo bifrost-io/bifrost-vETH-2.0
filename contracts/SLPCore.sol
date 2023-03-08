@@ -36,6 +36,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     event WithdrawalRequested(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
     event WithdrawalCompleted(address indexed sender, uint256 tokenAmount);
+    event WithdrawalDeposited(address indexed sender, uint256 tokenAmount);
 
     /* ========== CONSTANTS ========== */
 
@@ -177,6 +178,12 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         tokenPool = tokenPool - amount;
 
         emit RewardRemoved(msg.sender, amount);
+    }
+
+    function depositWithdrawal() external payable {
+        require(msg.sender == withdrawalVault, "Invalid sender");
+
+        emit WithdrawalDeposited(msg.sender, msg.value);
     }
 
     function setFeeRate(uint256 _feeRate) external onlyOwner {
