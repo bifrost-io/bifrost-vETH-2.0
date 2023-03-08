@@ -16,7 +16,7 @@ contract MevVault is OwnableUpgradeable {
     /* ========== EVENTS ========== */
 
     event RewardReceived(address indexed sender, uint256 amount);
-    event RewardPaid(address indexed sender, address receiver, uint256 amount);
+    event RewardAdded(address indexed sender, address receiver, uint256 amount);
 
     /* ========== CONSTANTS ========== */
 
@@ -54,7 +54,7 @@ contract MevVault is OwnableUpgradeable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function payReward() external onlyOwner {
+    function addReward() external onlyOwner {
         uint256 paidAt = getTodayTimestamp();
         require(!rewardDays[paidAt], "Paid today");
         rewardDays[paidAt] = true;
@@ -69,7 +69,7 @@ contract MevVault is OwnableUpgradeable {
         slpCore.addReward(rewardAmount);
         slpDeposit.depositETH{value: rewardAmount}();
 
-        emit RewardPaid(msg.sender, address(slpDeposit), rewardAmount);
+        emit RewardAdded(msg.sender, address(slpDeposit), rewardAmount);
     }
 
     receive() external payable {
