@@ -17,13 +17,21 @@ interface ISLPDeposit {
 }
 
 contract WithdrawalVault is OwnableUpgradeable {
+    /* ========== EVENTS ========== */
+
+    /* ========== CONSTANTS ========== */
+
     uint256 public constant DEPOSIT_ETH = 32 ether;
+
+    /* ========== STATE VARIABLES ========== */
 
     ISLPCore public slpCore;
     ISLPDeposit public slpDeposit;
 
     uint256 public withdrawalNodeNumber;
     uint256 public totalWithdrawalAmount;
+
+    mapping(uint256 => bool) public rewardDays;
 
     function initialize(address _slpCore, address _slpDeposit) public initializer {
         require(_slpCore != address(0), "Invalid SLP core address");
@@ -33,6 +41,8 @@ contract WithdrawalVault is OwnableUpgradeable {
         slpCore = ISLPCore(_slpCore);
         slpDeposit = ISLPDeposit(_slpDeposit);
     }
+
+    /* ========== MUTATIVE FUNCTIONS ========== */
 
     function withdrawWithdrawals(uint256 _amount) external onlyOwner {
         require(_amount > 0, "Zero amount");
@@ -48,6 +58,10 @@ contract WithdrawalVault is OwnableUpgradeable {
     }
 
     function addReward(uint256 _rewardAmount) external onlyOwner {
+        uint256 paidAt = getTodayTimestamp();
+        require(!rewardDays[paidAt], "Paid today");
+        rewardDays[paidAt] = true;
+
         require(
             _rewardAmount <= (totalWithdrawalAmount + address(this).balance) - (withdrawalNodeNumber * DEPOSIT_ETH),
             "Exceed total ETH"
@@ -58,6 +72,16 @@ contract WithdrawalVault is OwnableUpgradeable {
     }
 
     function removeReward(uint256 _rewardAmount) external onlyOwner {
+        uint256 rewardAt = getTodayTimestamp();
+        require(!rewardDays[rewardAt], "Reward paid today");
+        rewardDays[rewardAt] = true;
+
         slpCore.removeReward(_rewardAmount);
+    }
+
+    /* ========== VIEWS ========== */
+
+    function getTodayTimestamp() public view returns (uint256) {
+        return (block.timestamp / (1 days)) * (1 days);
     }
 }
