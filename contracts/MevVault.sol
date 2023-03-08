@@ -4,6 +4,10 @@ pragma solidity ^0.8.0;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+interface ISLPCore {
+    function addReward(uint256 amount) external;
+}
+
 interface ISLPDeposit {
     function depositETH() external payable;
 }
@@ -35,14 +39,16 @@ contract MevVault is OwnableUpgradeable {
     // date timestamp at 00:00:00 => reward paid
     mapping(uint256 => bool) public rewardDays;
 
+    ISLPCore public slpCore;
     ISLPDeposit public slpDeposit;
 
-    function initialize(address _slpDeposit) public initializer {
+    function initialize(address _slpCore, address _slpDeposit) public initializer {
         require(_slpDeposit != address(0), "Invalid SLP deposit address");
         super.__Ownable_init();
 
         reward.lastPaidAt = getTodayTimestamp();
         reward.finishAt = reward.lastPaidAt;
+        slpCore = ISLPCore(_slpCore);
         slpDeposit = ISLPDeposit(_slpDeposit);
     }
 
@@ -60,6 +66,7 @@ contract MevVault is OwnableUpgradeable {
         reward.paid = reward.paid + rewardAmount;
         reward.pending = 0;
 
+        slpCore.addReward(rewardAmount);
         slpDeposit.depositETH{value: rewardAmount}();
 
         emit RewardPaid(msg.sender, address(slpDeposit), rewardAmount);
