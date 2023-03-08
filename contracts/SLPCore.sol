@@ -49,6 +49,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     address public vETH1;
     address public vETH2;
     address public slpDeposit;
+    address public mevVault;
     address public withdrawalVault;
     address public operator;
     address public feeReceiver;
@@ -92,8 +93,8 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function mint() external payable nonReentrant whenNotPaused {
         uint256 tokenAmount = msg.value;
         require(tokenAmount > 0, "Zero amount");
-
         uint256 vTokenAmount = calculateVTokenAmount(tokenAmount);
+        require(vTokenAmount > 0, "Zero amount");
         tokenPool = tokenPool + tokenAmount;
         ISLPDeposit(slpDeposit).depositETH{value: tokenAmount}();
         IVETH(vETH2).mint(msg.sender, vTokenAmount);
@@ -144,19 +145,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit WithdrawalCompleted(msg.sender, tokenAmount);
     }
 
-    function increaseWithdrawalNodeNumber(uint256 n) external onlyOperator {
-        require((withdrawalNodeNumber + n) * DEPOSIT_ETH <= getHistoryETH(), "Exceed total ETH");
-        withdrawalNodeNumber += n;
-    }
-
-    function withdrawReward() external onlyOperator {
-        uint256 totalETH = getHistoryETH();
-        require(withdrawalNodeNumber * DEPOSIT_ETH <= totalETH, "Exceed total ETH");
-        uint256 rewardAmount = totalETH - (withdrawalNodeNumber * DEPOSIT_ETH);
-        ISLPDeposit(slpDeposit).depositETH{value: rewardAmount}();
-    }
-
-    function addReward(uint256 amount) external onlyOperator {
+    function addReward(uint256 amount) external onlyVault {
         uint256 rewardAt = getTodayTimestamp();
         require(!rewardDays[rewardAt], "Reward paid today");
         rewardDays[rewardAt] = true;
@@ -203,17 +192,17 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         withdrawalVault = _withdrawalVault;
     }
 
+    function setMevVault(address _mevVault) external onlyOwner {
+        require(_mevVault != address(0), "Invalid MEV vault address");
+        mevVault = _mevVault;
+    }
+
     function pause() external onlyOwner {
         super._pause();
     }
 
     function unpause() external onlyOwner {
         super._unpause();
-    }
-
-    function depositWithdrawals() external payable {
-        require(msg.sender == withdrawalVault, "Invalid sender");
-        require(withdrawalVault != address(0), "Withdrawal vault not set");
     }
 
     function _setFeeRate(uint256 _feeRate) private {
@@ -282,6 +271,11 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     modifier onlyOperator() {
         require(msg.sender == operator, "Caller is not operator");
+        _;
+    }
+
+    modifier onlyVault() {
+        require(msg.sender == mevVault || msg.sender == withdrawalVault, "Caller is not vault contract");
         _;
     }
 }
