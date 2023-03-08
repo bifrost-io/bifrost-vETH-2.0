@@ -158,7 +158,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit RewardAdded(msg.sender, amount, vTokenFee);
     }
 
-    function removeReward(uint256 amount) external onlyOperator {
+    function removeReward(uint256 amount) external onlyVault {
         uint256 rewardAt = getTodayTimestamp();
         require(!rewardDays[rewardAt], "Reward paid today");
         rewardDays[rewardAt] = true;

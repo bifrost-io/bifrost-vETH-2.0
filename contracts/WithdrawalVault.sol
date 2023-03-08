@@ -7,6 +7,8 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 interface ISLPCore {
     function addReward(uint256 amount) external;
 
+    function removeReward(uint256 amount) external;
+
     function depositWithdrawal() external payable;
 }
 
@@ -45,13 +47,17 @@ contract WithdrawalVault is OwnableUpgradeable {
         withdrawalNodeNumber += n;
     }
 
-    function withdrawReward(uint256 _rewardAmount) external onlyOwner {
+    function addReward(uint256 _rewardAmount) external onlyOwner {
         require(
             _rewardAmount <= (totalWithdrawalAmount + address(this).balance) - (withdrawalNodeNumber * DEPOSIT_ETH),
             "Exceed total ETH"
         );
-        require(_rewardAmount <= address(this).balance, "Exceed total ETH");
+        require(_rewardAmount <= address(this).balance, "Not enough ETH");
         slpCore.addReward(_rewardAmount);
         slpDeposit.depositETH{value: _rewardAmount}();
+    }
+
+    function removeReward(uint256 _rewardAmount) external onlyOwner {
+        slpCore.removeReward(_rewardAmount);
     }
 }
