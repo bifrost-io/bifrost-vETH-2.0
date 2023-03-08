@@ -59,7 +59,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     uint256 public queuedWithdrawal;
     uint256 public completedWithdrawal;
-    uint256 public withdrawalNodeNumber;
     mapping(address => Withdrawal) public withdrawals;
 
     function initialize(
@@ -243,28 +242,20 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         return (block.timestamp / (1 days)) * (1 days);
     }
 
-    function getHistoryETH() public view returns (uint256) {
+    function getTotalETH() public view returns (uint256) {
         return address(this).balance + completedWithdrawal;
     }
 
     function canWithdrawalAmount(address target) public view returns (uint256) {
         Withdrawal memory withdrawal = withdrawals[target];
 
-        if (withdrawalNodeNumber * DEPOSIT_ETH <= withdrawal.queued) {
-            return 0;
-        }
-        if (getHistoryETH() <= withdrawal.queued) {
+        if (getTotalETH() <= withdrawal.queued) {
             return 0;
         }
 
-        uint256 amount1 = withdrawalNodeNumber * DEPOSIT_ETH - withdrawal.queued;
-        uint256 amount2 = getHistoryETH() - withdrawal.queued;
-        uint256 availableWithdrawalAmount = amount1 < amount2 ? amount1 : amount2;
-        if (withdrawal.pending > availableWithdrawalAmount) {
-            return availableWithdrawalAmount;
-        } else {
-            return withdrawal.pending;
-        }
+        uint256 availableAmount = getTotalETH() - withdrawal.queued;
+
+        return withdrawal.pending > availableAmount ? availableAmount : withdrawal.pending;
     }
 
     /* ========== MODIFIER ========== */
