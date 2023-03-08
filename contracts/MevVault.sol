@@ -8,7 +8,7 @@ interface ISLPDeposit {
     function depositETH() external payable;
 }
 
-contract MevReward is OwnableUpgradeable {
+contract MevVault is OwnableUpgradeable {
     /* ========== EVENTS ========== */
 
     event RewardReceived(address indexed sender, uint256 amount);
