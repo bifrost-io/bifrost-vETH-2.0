@@ -51,7 +51,10 @@ contract WithdrawalVault is OwnableUpgradeable {
     }
 
     function increaseWithdrawalNode(uint256 n) external onlyOwner {
-        require((withdrawalNodeNumber + n) * DEPOSIT_ETH <= address(this).balance, "Exceed total ETH");
+        require(
+            (withdrawalNodeNumber + n) * DEPOSIT_ETH <= totalWithdrawalAmount + address(this).balance,
+            "Exceed total ETH"
+        );
         withdrawalNodeNumber += n;
     }
 
