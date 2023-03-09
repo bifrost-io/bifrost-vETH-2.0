@@ -63,12 +63,16 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         address _vETH1,
         address _vETH2,
         address _slpDeposit,
+        address _mevVault,
+        address _withdrawalVault,
         address _feeReceiver,
         uint256 _feeRate
     ) public initializer {
         require(_vETH1 != address(0), "Invalid vETH1");
         require(_vETH2 != address(0), "Invalid vETH2");
         require(_slpDeposit != address(0), "Invalid SLP deposit address");
+        require(_mevVault != address(0), "Invalid MEV vault address");
+        require(_withdrawalVault != address(0), "Invalid withdrawal vault address");
         require(IERC20Upgradeable(_vETH2).totalSupply() > 0, "Invalid totalSupply of vETH2");
 
         super.__Ownable_init();
@@ -80,6 +84,8 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         vETH1 = _vETH1;
         vETH2 = _vETH2;
         slpDeposit = _slpDeposit;
+        mevVault = _mevVault;
+        withdrawalVault = _withdrawalVault;
         tokenPool = IERC20Upgradeable(_vETH2).totalSupply();
     }
 
@@ -168,16 +174,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function setFeeReceiver(address _feeReceiver) external onlyOwner {
         _setFeeReceiver(_feeReceiver);
-    }
-
-    function setWithdrawalVault(address _withdrawalVault) external onlyOwner {
-        require(_withdrawalVault != address(0), "Invalid withdrawal vault address");
-        withdrawalVault = _withdrawalVault;
-    }
-
-    function setMevVault(address _mevVault) external onlyOwner {
-        require(_mevVault != address(0), "Invalid MEV vault address");
-        mevVault = _mevVault;
     }
 
     function pause() external onlyOwner {

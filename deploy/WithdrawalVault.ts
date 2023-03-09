@@ -1,6 +1,5 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
-import { ethers } from 'hardhat'
 
 const deployFunction: DeployFunction = async function ({ deployments, getNamedAccounts }: HardhatRuntimeEnvironment) {
   console.log('Running WithdrawalVault deploy script')
@@ -8,7 +7,6 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
-  const SLPCore = (await deployments.get('SLPCore')).address
   const SLPDeposit = (await deployments.get('SLPDeposit')).address
 
   const { address } = await deploy('WithdrawalVault', {
@@ -20,21 +18,17 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
       execute: {
         init: {
           methodName: 'initialize',
-          args: [SLPCore, SLPDeposit],
+          args: [SLPDeposit],
         },
       },
     },
   })
 
   console.log('WithdrawalVault deployed at', address)
-
-  const slpCore = await ethers.getContractAt('SLPCore', SLPCore)
-  const tx = await slpCore.setWithdrawalVault(address)
-  console.log(`Call slpCore.setWithdrawalVault: ${tx.hash}`)
 }
 
 export default deployFunction
 
-deployFunction.dependencies = ['SLPDeposit', 'SLPCore']
+deployFunction.dependencies = ['SLPDeposit']
 
 deployFunction.tags = ['WithdrawalVault']

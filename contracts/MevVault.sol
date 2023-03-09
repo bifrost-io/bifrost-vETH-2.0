@@ -42,13 +42,12 @@ contract MevVault is OwnableUpgradeable {
     ISLPCore public slpCore;
     ISLPDeposit public slpDeposit;
 
-    function initialize(address _slpCore, address _slpDeposit) public initializer {
+    function initialize(address _slpDeposit) public initializer {
         require(_slpDeposit != address(0), "Invalid SLP deposit address");
         super.__Ownable_init();
 
         reward.lastPaidAt = getTodayTimestamp();
         reward.finishAt = reward.lastPaidAt;
-        slpCore = ISLPCore(_slpCore);
         slpDeposit = ISLPDeposit(_slpDeposit);
     }
 
@@ -70,6 +69,11 @@ contract MevVault is OwnableUpgradeable {
         slpDeposit.depositETH{value: rewardAmount}();
 
         emit RewardAdded(msg.sender, address(slpDeposit), rewardAmount);
+    }
+
+    function setSLPCore(address _slpCore) external onlyOwner {
+        require(_slpCore != address(0), "Invalid SLP core address");
+        slpCore = ISLPCore(_slpCore);
     }
 
     receive() external payable {

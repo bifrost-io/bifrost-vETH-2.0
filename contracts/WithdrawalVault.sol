@@ -33,12 +33,10 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     mapping(uint256 => bool) public rewardDays;
 
-    function initialize(address _slpCore, address _slpDeposit) public initializer {
-        require(_slpCore != address(0), "Invalid SLP core address");
+    function initialize(address _slpDeposit) public initializer {
         require(_slpDeposit != address(0), "Invalid SLP deposit address");
         super.__Ownable_init();
 
-        slpCore = ISLPCore(_slpCore);
         slpDeposit = ISLPDeposit(_slpDeposit);
     }
 
@@ -77,6 +75,11 @@ contract WithdrawalVault is OwnableUpgradeable {
         rewardDays[rewardAt] = true;
 
         slpCore.removeReward(_rewardAmount);
+    }
+
+    function setSLPCore(address _slpCore) external onlyOwner {
+        require(_slpCore != address(0), "Invalid SLP core address");
+        slpCore = ISLPCore(_slpCore);
     }
 
     /* ========== VIEWS ========== */
