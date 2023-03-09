@@ -51,7 +51,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     address public slpDeposit;
     address public mevVault;
     address public withdrawalVault;
-    address public operator;
     address public feeReceiver;
     uint256 public tokenPool;
     uint256 public feeRate;
@@ -64,7 +63,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         address _vETH1,
         address _vETH2,
         address _slpDeposit,
-        address _operator,
         address _feeReceiver,
         uint256 _feeRate
     ) public initializer {
@@ -79,7 +77,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
         _setFeeRate(_feeRate);
         _setFeeReceiver(_feeReceiver);
-        _setOperator(_operator);
         vETH1 = _vETH1;
         vETH2 = _vETH2;
         slpDeposit = _slpDeposit;
@@ -160,7 +157,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function depositWithdrawal() external payable {
-        require(msg.sender == withdrawalVault, "Invalid sender");
+        require(msg.sender == withdrawalVault, "Invalid withdrawal vault address");
 
         emit WithdrawalDeposited(msg.sender, msg.value);
     }
@@ -171,10 +168,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function setFeeReceiver(address _feeReceiver) external onlyOwner {
         _setFeeReceiver(_feeReceiver);
-    }
-
-    function setOperator(address newOperator) external onlyOwner {
-        _setOperator(newOperator);
     }
 
     function setWithdrawalVault(address _withdrawalVault) external onlyOwner {
@@ -203,11 +196,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function _setFeeReceiver(address _feeReceiver) private {
         require(_feeReceiver != address(0), "Invalid fee receiver address");
         feeReceiver = _feeReceiver;
-    }
-
-    function _setOperator(address _newOperator) private {
-        require(_newOperator != address(0), "Invalid operator address");
-        operator = _newOperator;
     }
 
     function _sendValue(address payable recipient, uint256 amount) private {
@@ -247,11 +235,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     /* ========== MODIFIER ========== */
-
-    modifier onlyOperator() {
-        require(msg.sender == operator, "Caller is not operator");
-        _;
-    }
 
     modifier onlyVault() {
         require(msg.sender == mevVault || msg.sender == withdrawalVault, "Caller is not vault contract");
