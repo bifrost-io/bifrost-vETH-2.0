@@ -122,7 +122,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         withdrawal.queued = queuedWithdrawal;
         queuedWithdrawal = queuedWithdrawal + tokenAmount;
         tokenPool = tokenPool - tokenAmount;
-        IVETH(vETH2).burn(msg.sender, tokenAmount);
+        IVETH(vETH2).burn(msg.sender, vTokenAmount);
 
         emit WithdrawalRequested(msg.sender, tokenAmount, vTokenAmount);
     }
