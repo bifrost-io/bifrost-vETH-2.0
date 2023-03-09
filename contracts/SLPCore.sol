@@ -241,8 +241,9 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         }
 
         uint256 availableAmount = getTotalETH() - withdrawal.queued;
+        availableAmount = address(this).balance < availableAmount ? address(this).balance : availableAmount;
 
-        return withdrawal.pending > availableAmount ? availableAmount : withdrawal.pending;
+        return withdrawal.pending < availableAmount ? withdrawal.pending : availableAmount;
     }
 
     /* ========== MODIFIER ========== */
