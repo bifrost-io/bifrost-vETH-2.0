@@ -7,6 +7,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const { deploy } = deployments
   const { deployer } = await getNamedAccounts()
 
+  const slpCore = (await deployments.get('SLPCore')).address
   const slpDeposit = (await deployments.get('SLPDeposit')).address
 
   const { address } = await deploy('MevVault', {
@@ -18,7 +19,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
       execute: {
         init: {
           methodName: 'initialize',
-          args: [slpDeposit],
+          args: [slpCore, slpDeposit],
         },
       },
     },
@@ -29,6 +30,6 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
 
 export default deployFunction
 
-deployFunction.dependencies = ['SLPDeposit']
+deployFunction.dependencies = ['SLPCore', 'SLPDeposit']
 
 deployFunction.tags = ['MevVault']
