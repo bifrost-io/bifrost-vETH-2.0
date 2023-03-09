@@ -42,7 +42,6 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
     uint256 public constant FEE_RATE_DENOMINATOR = 1e4;
-    uint256 public constant DEPOSIT_ETH = 32 ether;
 
     /* ========== STATE VARIABLES ========== */
 

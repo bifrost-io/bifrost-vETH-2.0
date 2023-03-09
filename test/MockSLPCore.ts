@@ -6,13 +6,13 @@ import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 describe('MockSLPCore', function () {
   let depositContract: Contract
   let slpDeposit: Contract
+  let mevVault: Contract
   let slpCore: Contract
   let vETH1: Contract
   let vETH2: Contract
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
-  let operator: SignerWithAddress
-  let newOperator: SignerWithAddress
+  let mockWithdrawalVault: SignerWithAddress
   let attacker: SignerWithAddress
   let user1: SignerWithAddress
   let user2: SignerWithAddress
@@ -21,19 +21,21 @@ describe('MockSLPCore', function () {
   const DEAD_ADDRESS = '0x000000000000000000000000000000000000dEaD'
 
   beforeEach(async function () {
-    ;[deployer, newOwner, operator, newOperator, attacker, user1, user2, feeReceiver, newFeeReceiver] =
+    ;[deployer, newOwner, mockWithdrawalVault, attacker, user1, user2, feeReceiver, newFeeReceiver] =
       await ethers.getSigners()
 
     const DepositContract = await ethers.getContractFactory('DepositContract')
     const VETH1 = await ethers.getContractFactory('vETH1')
     const VETH2 = await ethers.getContractFactory('vETH2')
     const SLPDeposit = await ethers.getContractFactory('SLPDeposit')
+    const MevVault = await ethers.getContractFactory('MevVault')
     const SLPCore = await ethers.getContractFactory('MockSLPCore')
 
     depositContract = await DepositContract.deploy()
     vETH1 = await VETH1.deploy()
     vETH2 = await VETH2.deploy()
     slpDeposit = await SLPDeposit.deploy()
+    mevVault = await MevVault.deploy()
     slpCore = await SLPCore.deploy()
 
     const feeRate = 100
@@ -43,7 +45,8 @@ describe('MockSLPCore', function () {
       vETH1.address,
       vETH2.address,
       slpDeposit.address,
-      operator.address,
+      mevVault.address,
+      mockWithdrawalVault.address,
       feeReceiver.address,
       feeRate
     )
@@ -58,7 +61,8 @@ describe('MockSLPCore', function () {
     expect(await slpCore.vETH1()).to.equal(vETH1.address)
     expect(await slpCore.vETH2()).to.equal(vETH2.address)
     expect(await slpCore.slpDeposit()).to.equal(slpDeposit.address)
-    expect(await slpCore.operator()).to.equal(operator.address)
+    expect(await slpCore.mevVault()).to.equal(mevVault.address)
+    expect(await slpCore.withdrawalVault()).to.equal(mockWithdrawalVault.address)
     expect(await slpCore.feeReceiver()).to.equal(feeReceiver.address)
     expect(await slpCore.feeRate()).to.equal(feeRate)
     expect(await slpCore.DEAD_ADDRESS()).to.equal(DEAD_ADDRESS)
@@ -109,17 +113,6 @@ describe('MockSLPCore', function () {
 
   it('setFeeReceiver by attacker should revert', async function () {
     await expect(slpCore.connect(attacker).setFeeReceiver(newFeeReceiver.address)).to.revertedWith(
-      'Ownable: caller is not the owner'
-    )
-  })
-
-  it('setOperator by owner should be ok', async function () {
-    await slpCore.setOperator(newOperator.address)
-    expect(await slpCore.operator()).to.equal(newOperator.address)
-  })
-
-  it('setOperator by attacker should revert', async function () {
-    await expect(slpCore.connect(attacker).setOperator(newOperator.address)).to.revertedWith(
       'Ownable: caller is not the owner'
     )
   })
@@ -190,9 +183,9 @@ describe('MockSLPCore', function () {
     it('addReward should be ok', async function () {
       expect(await slpCore.calculateVTokenAmount(ethers.utils.parseEther('1'))).to.equal(ethers.utils.parseEther('1'))
       const reward = ethers.utils.parseEther('0.1')
-      await expect(slpCore.connect(operator).addReward(reward))
+      await expect(slpCore.connect(mockWithdrawalVault).addReward(reward))
         .to.emit(slpCore, 'RewardAdded')
-        .withArgs(operator.address, reward, ethers.utils.parseEther('0.001'))
+        .withArgs(mockWithdrawalVault.address, reward, ethers.utils.parseEther('0.001'))
       expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('1.1'))
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('1.001'))
       expect(await slpCore.calculateVTokenAmount(ethers.utils.parseEther('1'))).to.equal(
@@ -216,14 +209,14 @@ describe('MockSLPCore', function () {
     })
 
     it('addReward by attacker should revert', async function () {
-      await expect(slpCore.connect(attacker).addReward(1)).to.revertedWith('Caller is not operator')
+      await expect(slpCore.connect(attacker).addReward(1)).to.revertedWith('Caller is not vault contract')
     })
 
     it('removeReward should be ok', async function () {
       const reward = ethers.utils.parseEther('0.1')
-      await expect(slpCore.connect(operator).removeReward(reward))
+      await expect(slpCore.connect(mockWithdrawalVault).removeReward(reward))
         .to.emit(slpCore, 'RewardRemoved')
-        .withArgs(operator.address, reward)
+        .withArgs(mockWithdrawalVault.address, reward)
       expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('0.9'))
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('1'))
 
@@ -244,7 +237,7 @@ describe('MockSLPCore', function () {
     })
 
     it('removeReward by attacker should revert', async function () {
-      await expect(slpCore.connect(attacker).removeReward(1)).to.revertedWith('Caller is not operator')
+      await expect(slpCore.connect(attacker).removeReward(1)).to.revertedWith('Caller is not vault contract')
     })
   })
 
@@ -262,39 +255,6 @@ describe('MockSLPCore', function () {
         .withArgs(user2.address, amount, amount)
       expect(await vETH2.balanceOf(user2.address)).to.equal(amount)
       expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('2'))
-    })
-
-    it('increaseWithdrawalNodeNumber should be ok', async function () {
-      await deployer.sendTransaction({
-        to: slpCore.address,
-        value: ethers.utils.parseEther('32'),
-      })
-      expect(await slpCore.withdrawalNodeNumber()).to.equal(0)
-      await slpCore.connect(operator).increaseWithdrawalNodeNumber(1)
-      expect(await slpCore.withdrawalNodeNumber()).to.equal(1)
-
-      await deployer.sendTransaction({
-        to: slpCore.address,
-        value: ethers.utils.parseEther('320'),
-      })
-      await slpCore.connect(operator).increaseWithdrawalNodeNumber(10)
-      expect(await slpCore.withdrawalNodeNumber()).to.equal(11)
-    })
-
-    it('increaseWithdrawalNodeNumber exceed total ETH should revert', async function () {
-      await deployer.sendTransaction({
-        to: slpCore.address,
-        value: ethers.utils.parseEther('31.99999'),
-      })
-      await expect(slpCore.connect(operator).increaseWithdrawalNodeNumber(1)).to.revertedWith('Exceed total ETH')
-
-      await deployer.sendTransaction({
-        to: slpCore.address,
-        value: ethers.utils.parseEther('320'),
-      })
-      await slpCore.connect(operator).increaseWithdrawalNodeNumber(10)
-      expect(await slpCore.withdrawalNodeNumber()).to.equal(10)
-      await expect(slpCore.connect(operator).increaseWithdrawalNodeNumber(1)).to.revertedWith('Exceed total ETH')
     })
 
     it('withdrawRequest and withdrawComplete should be ok', async function () {
@@ -327,8 +287,6 @@ describe('MockSLPCore', function () {
         to: slpCore.address,
         value: ethers.utils.parseEther('32'),
       })
-
-      await slpCore.connect(operator).increaseWithdrawalNodeNumber(1)
 
       expect(await slpCore.canWithdrawalAmount(user1.address)).to.equal(ethers.utils.parseEther('0.1'))
       expect(await slpCore.canWithdrawalAmount(user2.address)).to.equal(ethers.utils.parseEther('0.1'))
