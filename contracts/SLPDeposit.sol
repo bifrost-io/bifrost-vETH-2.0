@@ -41,6 +41,8 @@ contract SLPDeposit is OwnableUpgradeable {
     IDepositContract public depositContract;
     // batch id => merkle root of withdrawal_credentials
     mapping(uint256 => bytes32) public merkleRoots;
+    // SLP core address
+    address public slpCore;
 
     function initialize(address _depositContract) public initializer {
         require(_depositContract != address(0), "Invalid deposit contract");
@@ -78,10 +80,26 @@ contract SLPDeposit is OwnableUpgradeable {
         }
     }
 
+    function withdrawETH(address recipient, uint256 amount) external onlySLPCore {
+        _sendValue(payable(recipient), amount);
+    }
+
     function setMerkleRoot(uint256 batchId, bytes32 merkleRoot) external onlyOwner {
         require(merkleRoots[batchId] == bytes32(0), "Merkle root exists");
         require(merkleRoot != bytes32(0), "Invalid merkle root");
         merkleRoots[batchId] = merkleRoot;
+    }
+
+    function setSLPCore(address _slpCore) external onlyOwner {
+        require(_slpCore != address(0), "Invalid SLP core address");
+        slpCore = _slpCore;
+    }
+
+    function _sendValue(address payable recipient, uint256 amount) private {
+        require(address(this).balance >= amount, "Insufficient balance");
+
+        (bool success, ) = recipient.call{value: amount}("");
+        require(success, "Unable to send value");
     }
 
     /* ========== VIEWS ========== */
@@ -95,5 +113,10 @@ contract SLPDeposit is OwnableUpgradeable {
             validator.signature,
             validator.deposit_data_root
         );
+    }
+
+    modifier onlySLPCore() {
+        require(msg.sender == slpCore, "Invalid SLP core address");
+        _;
     }
 }
