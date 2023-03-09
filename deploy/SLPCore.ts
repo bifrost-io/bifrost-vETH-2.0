@@ -1,7 +1,6 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
-import { ethers } from 'hardhat'
-import { CHAIN_ID, SLP_FEE_RECEIVER_ADDRESS, SLP_OPERATOR_ADDRESS, VETH1_ADDRESS } from '../constants/constants'
+import { CHAIN_ID, SLP_FEE_RECEIVER_ADDRESS, VETH1_ADDRESS } from '../constants/constants'
 
 const deployFunction: DeployFunction = async function ({
   deployments,
@@ -17,7 +16,6 @@ const deployFunction: DeployFunction = async function ({
   const vETH1 = VETH1_ADDRESS[chainId]
   const vETH2 = (await deployments.get('vETH2')).address
   const SLPDeposit = (await deployments.get('SLPDeposit')).address
-  const operator = SLP_OPERATOR_ADDRESS[chainId]
   const feeReceiver = SLP_FEE_RECEIVER_ADDRESS[chainId]
   // 500/10000 = 5%
   const feeRate = 500
@@ -31,7 +29,7 @@ const deployFunction: DeployFunction = async function ({
       execute: {
         init: {
           methodName: 'initialize',
-          args: [vETH1, vETH2, SLPDeposit, operator, feeReceiver, feeRate],
+          args: [vETH1, vETH2, SLPDeposit, feeReceiver, feeRate],
         },
       },
     },
