@@ -4,7 +4,7 @@ import { BigNumber, Contract } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 import { time } from '@nomicfoundation/hardhat-network-helpers'
 
-describe('MevVault', function () {
+describe('MockMevVault', function () {
   let depositContract: Contract
   let slpDeposit: Contract
   let mevVault: Contract
