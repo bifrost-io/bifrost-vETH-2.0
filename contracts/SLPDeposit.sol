@@ -13,12 +13,14 @@ interface IDepositContract {
     /// @param signature A BLS12-381 signature.
     /// @param deposit_data_root The SHA-256 hash of the SSZ-encoded DepositData object.
     /// Used as a protection against malformed input.
+    /* solhint-disable var-name-mixedcase */
     function deposit(
         bytes calldata pubkey,
         bytes calldata withdrawal_credentials,
         bytes calldata signature,
         bytes32 deposit_data_root
     ) external payable;
+    /* solhint-enable var-name-mixedcase */
 }
 
 contract SLPDeposit is OwnableUpgradeable {
