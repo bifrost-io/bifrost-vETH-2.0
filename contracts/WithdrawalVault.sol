@@ -73,7 +73,7 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     function removeReward(uint256 _rewardAmount) external onlyOwner {
         uint256 rewardAt = getTodayTimestamp();
-        require(!rewardDays[rewardAt], "Reward paid today");
+        require(!rewardDays[rewardAt], "Paid today");
         rewardDays[rewardAt] = true;
 
         slpCore.removeReward(_rewardAmount);
