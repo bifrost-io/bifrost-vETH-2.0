@@ -14,13 +14,14 @@ describe('MockMevVault', function () {
   let vETH2: Contract
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
+  let operator: SignerWithAddress
   let attacker: SignerWithAddress
   let feeReceiver: SignerWithAddress
   let rewardPayer: SignerWithAddress
   let newRewardReceiver: SignerWithAddress
 
   beforeEach(async function () {
-    ;[deployer, newOwner, attacker, feeReceiver, rewardPayer, newRewardReceiver] = await ethers.getSigners()
+    ;[deployer, newOwner, operator, attacker, feeReceiver, rewardPayer, newRewardReceiver] = await ethers.getSigners()
 
     const DepositContract = await ethers.getContractFactory('DepositContract')
     const VETH1 = await ethers.getContractFactory('vETH1')
@@ -52,7 +53,7 @@ describe('MockMevVault', function () {
       feeRate
     )
     await vETH2.setSLPCore(slpCore.address)
-    await mevVault.initialize(slpDeposit.address)
+    await mevVault.initialize(slpDeposit.address, operator.address)
     await mevVault.setSLPCore(slpCore.address)
   })
 
@@ -68,6 +69,7 @@ describe('MockMevVault', function () {
 
     expect(await mevVault.slpCore()).to.equal(slpCore.address)
     expect(await mevVault.slpDeposit()).to.equal(slpDeposit.address)
+    expect(await mevVault.operator()).to.equal(operator.address)
 
     expect(await mevVault.REWARD_DURATION()).to.equal(30)
     expect(await mevVault.REWARD_DURATION_DAYS()).to.equal(time.duration.days(30))
@@ -194,9 +196,9 @@ describe('MockMevVault', function () {
 
     it('addReward per day should be ok', async function () {
       // no reward
-      await expect(mevVault.addReward())
+      await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
-        .withArgs(deployer.address, slpDeposit.address, 0)
+        .withArgs(operator.address, slpDeposit.address, 0)
       let reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0'))
       expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0'))
@@ -204,9 +206,9 @@ describe('MockMevVault', function () {
       // pay reward
       for (let i = 0; i < 30; i++) {
         await time.increase(time.duration.days(1))
-        await expect(mevVault.addReward())
+        await expect(mevVault.connect(operator).addReward())
           .to.emit(mevVault, 'RewardAdded')
-          .withArgs(deployer.address, slpDeposit.address, ethers.utils.parseEther('0.033333333333333333'))
+          .withArgs(operator.address, slpDeposit.address, ethers.utils.parseEther('0.033333333333333333'))
       }
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
@@ -214,9 +216,9 @@ describe('MockMevVault', function () {
 
       // no reward
       await time.increase(time.duration.days(1))
-      await expect(mevVault.addReward())
+      await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
-        .withArgs(deployer.address, slpDeposit.address, 0)
+        .withArgs(operator.address, slpDeposit.address, 0)
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
       expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
@@ -224,9 +226,9 @@ describe('MockMevVault', function () {
 
     it('addReward per 10 day should be ok', async function () {
       // no reward
-      await expect(mevVault.addReward())
+      await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
-        .withArgs(deployer.address, slpDeposit.address, 0)
+        .withArgs(operator.address, slpDeposit.address, 0)
       let reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0'))
       expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0'))
@@ -234,9 +236,9 @@ describe('MockMevVault', function () {
       // pay reward
       for (let i = 0; i < 3; i++) {
         await time.increase(time.duration.days(10))
-        await expect(mevVault.addReward())
+        await expect(mevVault.connect(operator).addReward())
           .to.emit(mevVault, 'RewardAdded')
-          .withArgs(deployer.address, slpDeposit.address, ethers.utils.parseEther('0.333333333333333330'))
+          .withArgs(operator.address, slpDeposit.address, ethers.utils.parseEther('0.333333333333333330'))
       }
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
@@ -244,9 +246,9 @@ describe('MockMevVault', function () {
 
       // no reward
       await time.increase(time.duration.days(1))
-      await expect(mevVault.addReward())
+      await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
-        .withArgs(deployer.address, slpDeposit.address, 0)
+        .withArgs(operator.address, slpDeposit.address, 0)
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
       expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
@@ -254,27 +256,27 @@ describe('MockMevVault', function () {
 
     it('addReward one time should be ok', async function () {
       // no reward
-      await expect(mevVault.addReward())
+      await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
-        .withArgs(deployer.address, slpDeposit.address, 0)
+        .withArgs(operator.address, slpDeposit.address, 0)
       let reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0'))
       expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0'))
 
       // pay reward
       await time.increase(time.duration.days(100))
-      await expect(mevVault.addReward())
+      await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
-        .withArgs(deployer.address, slpDeposit.address, ethers.utils.parseEther('0.999999999999999990'))
+        .withArgs(operator.address, slpDeposit.address, ethers.utils.parseEther('0.999999999999999990'))
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
       expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
 
       // no reward
       await time.increase(time.duration.days(100))
-      await expect(mevVault.addReward())
+      await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
-        .withArgs(deployer.address, slpDeposit.address, 0)
+        .withArgs(operator.address, slpDeposit.address, 0)
 
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
@@ -282,7 +284,7 @@ describe('MockMevVault', function () {
     })
 
     it('addReward by attacker should revert', async function () {
-      await expect(mevVault.connect(attacker).addReward()).revertedWith('Ownable: caller is not the owner')
+      await expect(mevVault.connect(attacker).addReward()).revertedWith('Caller is not operator')
     })
   })
 })
