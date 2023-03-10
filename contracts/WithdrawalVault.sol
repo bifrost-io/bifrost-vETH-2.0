@@ -19,6 +19,11 @@ interface ISLPDeposit {
 contract WithdrawalVault is OwnableUpgradeable {
     /* ========== EVENTS ========== */
 
+    event RewardAdded(address indexed sender, uint256 amount);
+    event RewardRemoved(address indexed sender, uint256 amount);
+    event Withdrawn(address indexed sender, uint256 amount);
+    event WithdrawalNodeIncreased(address indexed sender, uint256 number);
+
     /* ========== CONSTANTS ========== */
 
     uint256 public constant DEPOSIT_ETH = 32 ether;
@@ -51,6 +56,8 @@ contract WithdrawalVault is OwnableUpgradeable {
         require(totalWithdrawalAmount + _amount <= withdrawalNodeNumber * DEPOSIT_ETH, "Exceed total ETH");
         totalWithdrawalAmount = totalWithdrawalAmount + _amount;
         slpCore.depositWithdrawal{value: _amount}();
+
+        emit Withdrawn(msg.sender, _amount);
     }
 
     function increaseWithdrawalNode(uint256 n) external onlyOperator {
@@ -59,6 +66,8 @@ contract WithdrawalVault is OwnableUpgradeable {
             "Exceed total ETH"
         );
         withdrawalNodeNumber += n;
+
+        emit WithdrawalNodeIncreased(msg.sender, n);
     }
 
     function addReward(uint256 _rewardAmount) external onlyOperator {
@@ -73,6 +82,8 @@ contract WithdrawalVault is OwnableUpgradeable {
         require(_rewardAmount <= address(this).balance, "Not enough ETH");
         slpCore.addReward(_rewardAmount);
         slpDeposit.depositETH{value: _rewardAmount}();
+
+        emit RewardAdded(msg.sender, _rewardAmount);
     }
 
     function removeReward(uint256 _rewardAmount) external onlyOperator {
@@ -81,6 +92,8 @@ contract WithdrawalVault is OwnableUpgradeable {
         rewardDays[rewardAt] = true;
 
         slpCore.removeReward(_rewardAmount);
+
+        emit RewardRemoved(msg.sender, _rewardAmount);
     }
 
     function setSLPCore(address _slpCore) external onlyOwner {
