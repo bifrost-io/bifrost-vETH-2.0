@@ -7,17 +7,16 @@ describe('vETH2 Token', function () {
   let vETH2: Contract
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
-  let operator: SignerWithAddress
-  let newOperator: SignerWithAddress
+  let mockSLPCore: SignerWithAddress
+  let newMockSLPCore: SignerWithAddress
   let receiver: SignerWithAddress
   let attacker: SignerWithAddress
 
   beforeEach(async function () {
-    ;[deployer, newOwner, operator, newOperator, receiver, attacker] = await ethers.getSigners()
+    ;[deployer, newOwner, mockSLPCore, newMockSLPCore, receiver, attacker] = await ethers.getSigners()
     const VETH2 = await ethers.getContractFactory('vETH2')
     vETH2 = await VETH2.deploy()
-    expect(await vETH2.operator()).to.equal(deployer.address)
-    await vETH2.setOperator(operator.address)
+    await vETH2.setSLPCore(mockSLPCore.address)
   })
 
   it('basic check', async function () {
@@ -25,7 +24,7 @@ describe('vETH2 Token', function () {
     expect(await vETH2.symbol()).to.equal('vETH')
     expect(await vETH2.decimals()).to.equal(18)
     expect(await vETH2.owner()).to.equal(deployer.address)
-    expect(await vETH2.operator()).to.equal(operator.address)
+    expect(await vETH2.slpCore()).to.equal(mockSLPCore.address)
   })
 
   it('transfer owner should be ok', async function () {
@@ -39,27 +38,27 @@ describe('vETH2 Token', function () {
     )
   })
 
-  it('set operator should be ok', async function () {
-    await vETH2.setOperator(newOperator.address)
-    expect(await vETH2.operator()).to.equal(newOperator.address)
+  it('set SLPCore should be ok', async function () {
+    await vETH2.setSLPCore(newMockSLPCore.address)
+    expect(await vETH2.slpCore()).to.equal(newMockSLPCore.address)
   })
 
-  it('set operator by attacker should revert', async function () {
-    await expect(vETH2.connect(attacker).setOperator(newOperator.address)).to.revertedWith(
+  it('set SLPCore by attacker should revert', async function () {
+    await expect(vETH2.connect(attacker).setSLPCore(newMockSLPCore.address)).to.revertedWith(
       'Ownable: caller is not the owner'
     )
   })
 
-  it('mint by operator should be ok', async function () {
+  it('mint by SLPCore should be ok', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.connect(operator).mint(receiver.address, amount)
+    await vETH2.connect(mockSLPCore).mint(receiver.address, amount)
     expect(await vETH2.balanceOf(receiver.address)).to.equal(amount)
     expect(await vETH2.totalSupply()).to.equal(amount)
   })
 
   it('mint by attacker should revert', async function () {
     const amount = ethers.utils.parseEther('10')
-    await expect(vETH2.connect(attacker).mint(receiver.address, amount)).revertedWith('Caller is not operator')
+    await expect(vETH2.connect(attacker).mint(receiver.address, amount)).revertedWith('Invalid SLP core address')
   })
 
   it('pause/unpause by owner should be ok', async function () {
@@ -77,7 +76,7 @@ describe('vETH2 Token', function () {
 
   it('transfer should be ok', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.connect(operator).mint(newOwner.address, amount)
+    await vETH2.connect(mockSLPCore).mint(newOwner.address, amount)
     expect(await vETH2.balanceOf(newOwner.address)).to.equal(amount)
     expect(await vETH2.balanceOf(receiver.address)).to.equal(0)
 
@@ -88,7 +87,7 @@ describe('vETH2 Token', function () {
 
   it('transferFrom should be ok', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.connect(operator).mint(newOwner.address, amount)
+    await vETH2.connect(mockSLPCore).mint(newOwner.address, amount)
     expect(await vETH2.balanceOf(newOwner.address)).to.equal(amount)
     expect(await vETH2.balanceOf(receiver.address)).to.equal(0)
 
@@ -100,7 +99,7 @@ describe('vETH2 Token', function () {
 
   it('transfer when paused should revert', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.connect(operator).mint(newOwner.address, amount)
+    await vETH2.connect(mockSLPCore).mint(newOwner.address, amount)
 
     await vETH2.pause()
     await expect(vETH2.connect(newOwner).transfer(receiver.address, amount)).revertedWith(
@@ -112,7 +111,7 @@ describe('vETH2 Token', function () {
 
   it('transferFrom when paused should revert', async function () {
     const amount = ethers.utils.parseEther('10')
-    await vETH2.connect(operator).mint(newOwner.address, amount)
+    await vETH2.connect(mockSLPCore).mint(newOwner.address, amount)
 
     await vETH2.pause()
     await vETH2.connect(newOwner).approve(receiver.address, amount)

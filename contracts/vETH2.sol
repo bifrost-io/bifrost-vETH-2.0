@@ -9,19 +9,18 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 contract vETH2 is ERC20Pausable, Ownable {
     /* ========== STATE VARIABLES ========== */
 
-    address public operator;
+    address public slpCore;
 
-    constructor() ERC20("Voucher Ethereum 2.0", "vETH") Pausable() Ownable() {
-        operator = owner();
-    }
+    // solhint-disable-next-line no-empty-blocks
+    constructor() ERC20("Voucher Ethereum 2.0", "vETH") Pausable() Ownable() {}
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function mint(address account, uint amount) external onlyOperator {
+    function mint(address account, uint amount) external onlySLPCore {
         super._mint(account, amount);
     }
 
-    function burn(address account, uint amount) external onlyOperator {
+    function burn(address account, uint amount) external onlySLPCore {
         super._burn(account, amount);
     }
 
@@ -33,15 +32,15 @@ contract vETH2 is ERC20Pausable, Ownable {
         super._unpause();
     }
 
-    function setOperator(address _operator) external onlyOwner {
-        require(_operator != address(0), "Invalid operator address");
-        operator = _operator;
+    function setSLPCore(address _slpCore) external onlyOwner {
+        require(_slpCore != address(0), "Invalid SLP core address");
+        slpCore = _slpCore;
     }
 
     /* ========== MODIFIER ========== */
 
-    modifier onlyOperator() {
-        require(msg.sender == operator, "Caller is not operator");
+    modifier onlySLPCore() {
+        require(msg.sender == slpCore, "Invalid SLP core address");
         _;
     }
 }

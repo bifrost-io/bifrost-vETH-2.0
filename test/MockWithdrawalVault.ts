@@ -38,6 +38,7 @@ describe('MockWithdrawalVault', function () {
     slpCore = await SLPCore.deploy()
 
     const feeRate = 100
+    await vETH2.setSLPCore(deployer.address)
     await vETH2.mint(deployer.address, ethers.utils.parseEther('1'))
     await slpDeposit.initialize(depositContract.address)
     await mevVault.initialize(depositContract.address)
@@ -51,7 +52,7 @@ describe('MockWithdrawalVault', function () {
       feeReceiver.address,
       feeRate
     )
-    await vETH2.setOperator(slpCore.address)
+    await vETH2.setSLPCore(slpCore.address)
     await mevVault.setSLPCore(slpCore.address)
     await mockWithdrawalVault.setSLPCore(slpCore.address)
   })

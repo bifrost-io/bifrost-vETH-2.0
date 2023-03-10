@@ -51,6 +51,10 @@ const deployFunction: DeployFunction = async function ({
   const withdrawalVault = await ethers.getContractAt('WithdrawalVault', WithdrawalVault)
   const tx3 = await withdrawalVault.setSLPCore(address)
   console.log(`Send withdrawalVault.setSLPCore: ${tx3.hash}`)
+
+  const vETH2Contract = await ethers.getContractAt('vETH2', (await deployments.get('vETH2')).address)
+  const tx4 = await vETH2Contract.setSLPCore(address)
+  console.log(`Call vETH2.setSLPCore: ${tx4.hash}`)
 }
 
 export default deployFunction

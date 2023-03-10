@@ -41,6 +41,7 @@ describe('vETH2Claim', function () {
     vETH2 = await VETH2.deploy()
 
     await vETH2Claim.initialize(vETH2.address, merkleRoot)
+    await vETH2.setSLPCore(deployer.address)
     await vETH2.mint(vETH2Claim.address, ethers.utils.parseEther('10'))
   })
 

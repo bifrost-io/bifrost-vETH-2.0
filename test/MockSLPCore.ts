@@ -39,6 +39,7 @@ describe('MockSLPCore', function () {
     slpCore = await SLPCore.deploy()
 
     const feeRate = 100
+    await vETH2.setSLPCore(deployer.address)
     await vETH2.mint(deployer.address, ethers.utils.parseEther('1'))
     await slpDeposit.initialize(depositContract.address)
     await slpCore.initialize(
@@ -50,7 +51,7 @@ describe('MockSLPCore', function () {
       feeReceiver.address,
       feeRate
     )
-    await vETH2.setOperator(slpCore.address)
+    await vETH2.setSLPCore(slpCore.address)
   })
 
   it('basic check', async function () {
