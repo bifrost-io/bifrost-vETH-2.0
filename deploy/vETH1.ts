@@ -6,7 +6,7 @@ const deployFunction: DeployFunction = async function ({
   getNamedAccounts,
   network,
 }: HardhatRuntimeEnvironment) {
-  if (network.name !== 'mainnet') {
+  if (network.name === 'hardhat') {
     console.log('Running vETH1 deploy script')
 
     const { deploy } = deployments
