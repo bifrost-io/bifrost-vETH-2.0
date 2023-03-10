@@ -27,22 +27,25 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     ISLPCore public slpCore;
     ISLPDeposit public slpDeposit;
+    address public operator;
 
     uint256 public withdrawalNodeNumber;
     uint256 public totalWithdrawalAmount;
 
     mapping(uint256 => bool) public rewardDays;
 
-    function initialize(address _slpDeposit) public initializer {
+    function initialize(address _slpDeposit, address _operator) public initializer {
         require(_slpDeposit != address(0), "Invalid SLP deposit address");
+        require(_operator != address(0), "Invalid operator address");
         super.__Ownable_init();
 
         slpDeposit = ISLPDeposit(_slpDeposit);
+        operator = _operator;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function withdrawWithdrawals(uint256 _amount) external onlyOwner {
+    function withdrawWithdrawals(uint256 _amount) external onlyOperator {
         require(_amount > 0, "Zero amount");
         require(_amount <= address(this).balance, "Not enough balance");
         require(totalWithdrawalAmount + _amount <= withdrawalNodeNumber * DEPOSIT_ETH, "Exceed total ETH");
@@ -50,7 +53,7 @@ contract WithdrawalVault is OwnableUpgradeable {
         slpCore.depositWithdrawal{value: _amount}();
     }
 
-    function increaseWithdrawalNode(uint256 n) external onlyOwner {
+    function increaseWithdrawalNode(uint256 n) external onlyOperator {
         require(
             (withdrawalNodeNumber + n) * DEPOSIT_ETH <= totalWithdrawalAmount + address(this).balance,
             "Exceed total ETH"
@@ -58,7 +61,7 @@ contract WithdrawalVault is OwnableUpgradeable {
         withdrawalNodeNumber += n;
     }
 
-    function addReward(uint256 _rewardAmount) external onlyOwner {
+    function addReward(uint256 _rewardAmount) external onlyOperator {
         uint256 paidAt = getTodayTimestamp();
         require(!rewardDays[paidAt], "Paid today");
         rewardDays[paidAt] = true;
@@ -72,7 +75,7 @@ contract WithdrawalVault is OwnableUpgradeable {
         slpDeposit.depositETH{value: _rewardAmount}();
     }
 
-    function removeReward(uint256 _rewardAmount) external onlyOwner {
+    function removeReward(uint256 _rewardAmount) external onlyOperator {
         uint256 rewardAt = getTodayTimestamp();
         require(!rewardDays[rewardAt], "Paid today");
         rewardDays[rewardAt] = true;
@@ -85,9 +88,21 @@ contract WithdrawalVault is OwnableUpgradeable {
         slpCore = ISLPCore(_slpCore);
     }
 
+    function setOperator(address _operator) external onlyOwner {
+        require(_operator != address(0), "Invalid operator address");
+        operator = _operator;
+    }
+
     /* ========== VIEWS ========== */
 
     function getTodayTimestamp() public view returns (uint256) {
         return (block.timestamp / (1 days)) * (1 days);
+    }
+
+    /* ========== MODIFIER ========== */
+
+    modifier onlyOperator() {
+        require(msg.sender == operator, "Caller is not operator");
+        _;
     }
 }

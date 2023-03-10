@@ -41,19 +41,22 @@ contract MevVault is OwnableUpgradeable {
 
     ISLPCore public slpCore;
     ISLPDeposit public slpDeposit;
+    address public operator;
 
-    function initialize(address _slpDeposit) public initializer {
+    function initialize(address _slpDeposit, address _operator) public initializer {
         require(_slpDeposit != address(0), "Invalid SLP deposit address");
+        require(_operator != address(0), "Invalid operator address");
         super.__Ownable_init();
 
         reward.lastPaidAt = getTodayTimestamp();
         reward.finishAt = reward.lastPaidAt;
         slpDeposit = ISLPDeposit(_slpDeposit);
+        operator = _operator;
     }
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function addReward() external onlyOwner {
+    function addReward() external onlyOperator {
         uint256 paidAt = getTodayTimestamp();
         require(!rewardDays[paidAt], "Paid today");
         rewardDays[paidAt] = true;
@@ -74,6 +77,11 @@ contract MevVault is OwnableUpgradeable {
     function setSLPCore(address _slpCore) external onlyOwner {
         require(_slpCore != address(0), "Invalid SLP core address");
         slpCore = ISLPCore(_slpCore);
+    }
+
+    function setOperator(address _operator) external onlyOwner {
+        require(_operator != address(0), "Invalid operator address");
+        operator = _operator;
     }
 
     receive() external payable {
@@ -97,5 +105,12 @@ contract MevVault is OwnableUpgradeable {
     function getDays() private view returns (uint256 times) {
         uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
         times = (endAt - reward.lastPaidAt) / (1 days);
+    }
+
+    /* ========== MODIFIER ========== */
+
+    modifier onlyOperator() {
+        require(msg.sender == operator, "Caller is not operator");
+        _;
     }
 }

@@ -8,6 +8,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
   const { deployer } = await getNamedAccounts()
 
   const SLPDeposit = (await deployments.get('SLPDeposit')).address
+  const operator = deployer
 
   const { address } = await deploy('WithdrawalVault', {
     from: deployer,
@@ -18,7 +19,7 @@ const deployFunction: DeployFunction = async function ({ deployments, getNamedAc
       execute: {
         init: {
           methodName: 'initialize',
-          args: [SLPDeposit],
+          args: [SLPDeposit, operator],
         },
       },
     },
