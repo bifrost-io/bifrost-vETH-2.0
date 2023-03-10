@@ -31,7 +31,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     event Deposited(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
     event Renewed(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
 
-    event RewardAdded(address indexed sender, uint256 tokenAamount, uint256 vTokenfee);
+    event RewardAdded(address indexed sender, uint256 tokenAmount, uint256 vTokenfee);
     event RewardRemoved(address indexed sender, uint256 tokenAmount);
 
     event WithdrawalRequested(address indexed sender, uint256 tokenAmount, uint256 vTokenAmount);
