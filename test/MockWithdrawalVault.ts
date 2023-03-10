@@ -99,19 +99,27 @@ describe('MockWithdrawalVault', function () {
         value: ethers.utils.parseEther('32'),
       })
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
-      await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)
+      expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1))
+        .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
+        .withArgs(operator.address, 1)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
 
-      await mockWithdrawalVault.connect(operator).withdrawWithdrawals(ethers.utils.parseEther('32'))
+      expect(await mockWithdrawalVault.connect(operator).withdrawWithdrawals(ethers.utils.parseEther('32')))
+        .to.emit(mockWithdrawalVault, 'Withdrawn')
+        .withArgs(operator.address, ethers.utils.parseEther('32'))
 
       await deployer.sendTransaction({
         to: mockWithdrawalVault.address,
         value: ethers.utils.parseEther('320'),
       })
-      await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(10)
+      expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(10))
+        .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
+        .withArgs(operator.address, 10)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(11)
 
-      await mockWithdrawalVault.connect(operator).withdrawWithdrawals(ethers.utils.parseEther('32').mul(10))
+      expect(await mockWithdrawalVault.connect(operator).withdrawWithdrawals(ethers.utils.parseEther('32').mul(10)))
+        .to.emit(mockWithdrawalVault, 'Withdrawn')
+        .withArgs(operator.address, ethers.utils.parseEther('32').mul(10))
     })
 
     it('increaseWithdrawalNode exceed total ETH should revert', async function () {
@@ -125,7 +133,9 @@ describe('MockWithdrawalVault', function () {
         to: mockWithdrawalVault.address,
         value: ethers.utils.parseEther('320'),
       })
-      await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(10)
+      expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(10))
+        .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
+        .withArgs(operator.address, 10)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(10)
       await expect(mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)).to.revertedWith('Exceed total ETH')
     })
@@ -153,10 +163,14 @@ describe('MockWithdrawalVault', function () {
         value: ethers.utils.parseEther('32.5'),
       })
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
-      await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)
+      expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1))
+        .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
+        .withArgs(operator.address, 1)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
 
-      await mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.5'))
+      expect(await mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.5')))
+        .to.emit(mockWithdrawalVault, 'RewardAdded')
+        .withArgs(operator.address, ethers.utils.parseEther('0.5'))
     })
 
     it('addReward exceed total ETH should revert', async function () {
@@ -165,7 +179,9 @@ describe('MockWithdrawalVault', function () {
         value: ethers.utils.parseEther('32.5'),
       })
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
-      await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)
+      expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1))
+        .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
+        .withArgs(operator.address, 1)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
 
       await expect(mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.51'))).to.revertedWith(
@@ -174,7 +190,9 @@ describe('MockWithdrawalVault', function () {
     })
 
     it('removeReward should be ok', async function () {
-      await mockWithdrawalVault.connect(operator).removeReward(ethers.utils.parseEther('0.5'))
+      expect(await mockWithdrawalVault.connect(operator).removeReward(ethers.utils.parseEther('0.5')))
+        .to.emit(mockWithdrawalVault, 'RewardRemoved')
+        .withArgs(operator.address, ethers.utils.parseEther('0.5'))
     })
   })
 })
