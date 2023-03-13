@@ -112,7 +112,7 @@ contract SLPDeposit is OwnableUpgradeable {
 
     function innerDeposit(Validator memory validator) private {
         require(address(this).balance >= DEPOSIT_ETH, "Insufficient balance");
-        depositContract.deposit{value: amount}(
+        depositContract.deposit{value: DEPOSIT_ETH}(
             validator.pubkey,
             validator.withdrawal_credentials,
             validator.signature,
