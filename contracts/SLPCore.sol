@@ -16,6 +16,8 @@ interface IVETH {
 
 interface ISLPDeposit {
     function depositETH() external payable;
+
+    function withdrawETH(address recipient, uint256 amount) external;
 }
 
 contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
