@@ -102,7 +102,7 @@ contract MevVault is OwnableUpgradeable {
         return (block.timestamp / (1 days)) * (1 days);
     }
 
-    function getDays() private view returns (uint256 times) {
+    function getDays() public view returns (uint256 times) {
         uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
         times = (endAt - reward.lastPaidAt) / (1 days);
     }
