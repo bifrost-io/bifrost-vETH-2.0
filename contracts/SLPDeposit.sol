@@ -37,6 +37,10 @@ contract SLPDeposit is OwnableUpgradeable {
 
     event EthDeposited(address indexed sender, uint256 tokenAamount);
 
+    /* ========== CONSTANTS ========== */
+
+    uint256 public constant DEPOSIT_ETH = 32 ether;
+
     /* ========== STATE VARIABLES ========== */
 
     // address of Ethereum 2.0 Deposit Contract
@@ -107,8 +111,7 @@ contract SLPDeposit is OwnableUpgradeable {
     /* ========== VIEWS ========== */
 
     function innerDeposit(Validator memory validator) private {
-        uint amount = 32 ether;
-        require(address(this).balance >= amount, "Insufficient balance");
+        require(address(this).balance >= DEPOSIT_ETH, "Insufficient balance");
         depositContract.deposit{value: amount}(
             validator.pubkey,
             validator.withdrawal_credentials,
