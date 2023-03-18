@@ -41,8 +41,10 @@ const deployFunction: DeployFunction = async function ({
   console.log('SLPCore deployed at', address)
 
   const slpDeposit = await ethers.getContractAt('SLPDeposit', SLPDeposit)
-  const tx1 = await slpDeposit.setSLPCore(address)
-  console.log(`Send slpDeposit.setSLPCore: ${tx1.hash}`)
+  const tx1_1 = await slpDeposit.setSLPCore(address)
+  console.log(`Send slpDeposit.setSLPCore: ${tx1_1.hash}`)
+  const tx1_2 = await slpDeposit.setCredential(WithdrawalVault)
+  console.log(`Send slpDeposit.setCredential: ${tx1_2.hash}`)
 
   const mevVault = await ethers.getContractAt('MevVault', MevVault)
   const tx2 = await mevVault.setSLPCore(address)
