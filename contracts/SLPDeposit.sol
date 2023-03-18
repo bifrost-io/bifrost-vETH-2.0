@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
+// solhint-disable var-name-mixedcase
 
 pragma solidity ^0.8.0;
 
@@ -13,25 +14,21 @@ interface IDepositContract {
     /// @param signature A BLS12-381 signature.
     /// @param deposit_data_root The SHA-256 hash of the SSZ-encoded DepositData object.
     /// Used as a protection against malformed input.
-    /* solhint-disable var-name-mixedcase */
     function deposit(
         bytes calldata pubkey,
         bytes calldata withdrawal_credentials,
         bytes calldata signature,
         bytes32 deposit_data_root
     ) external payable;
-    /* solhint-enable var-name-mixedcase */
 }
 
 contract SLPDeposit is OwnableUpgradeable {
-    /* solhint-disable var-name-mixedcase */
     struct Validator {
         bytes pubkey;
         bytes withdrawal_credentials;
         bytes signature;
         bytes32 deposit_data_root;
     }
-    /* solhint-enable var-name-mixedcase */
 
     /* ========== EVENTS ========== */
 
@@ -40,6 +37,7 @@ contract SLPDeposit is OwnableUpgradeable {
     /* ========== CONSTANTS ========== */
 
     uint256 public constant DEPOSIT_SIZE = 32 ether;
+    // solhint-disable-next-line max-line-length
     // Refer to https://github.com/lidofinance/lido-dao/blob/14503a5a9c7c46864704bb3561e22ae2f84a04ff/contracts/0.8.9/BeaconChainDepositor.sol#L27
     uint64 public constant DEPOSIT_SIZE_IN_GWEI_LE64 = 0x0040597307000000;
 
