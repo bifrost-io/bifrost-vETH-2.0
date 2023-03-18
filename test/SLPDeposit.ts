@@ -66,7 +66,7 @@ describe('SLPDeposit', function () {
       )
     })
 
-    describe('batchDeposit', function () {
+    describe('batchDepositWithProof', function () {
       let root: string
       let proof: Buffer[]
       let proofFlags: boolean[]
@@ -95,7 +95,7 @@ describe('SLPDeposit', function () {
         proofFlags = tree.getProofFlags(proofLeaves, proof)
       })
 
-      it('batchDeposit by owner should be ok', async function () {
+      it('batchDepositWithProof by owner should be ok', async function () {
         const depositAmount = ethers.utils.parseEther('32').mul(validators.length)
         await expect(slpDeposit.depositETH({ value: depositAmount }))
           .to.emit(slpDeposit, 'EthDeposited')
@@ -105,7 +105,7 @@ describe('SLPDeposit', function () {
 
         await slpDeposit.setMerkleRoot(batchId, root)
 
-        await slpDeposit.batchDeposit(
+        await slpDeposit.batchDepositWithProof(
           batchId,
           proof.map((buff) => `0x${buff.toString('hex')}`),
           proofFlags,
@@ -115,22 +115,22 @@ describe('SLPDeposit', function () {
         expect(await ethers.provider.getBalance(depositContract.address)).to.equal(depositAmount)
       })
 
-      it('batchDeposit invalid proof should revert', async function () {
+      it('batchDepositWithProof invalid proof should revert', async function () {
         await slpDeposit.setMerkleRoot(batchId, root)
 
         const invalidProof = proof.map((buff) => `0x${buff.toString('hex')}`)
         invalidProof[0] = '0x6f8b74eac672ae152dc2445ce1841d405bc19a1dac2a233939083f73815585bb'
 
-        await expect(slpDeposit.batchDeposit(batchId, invalidProof, proofFlags, validators)).to.revertedWith(
+        await expect(slpDeposit.batchDepositWithProof(batchId, invalidProof, proofFlags, validators)).to.revertedWith(
           'Merkle proof verification failed'
         )
       })
 
-      it('batchDeposit with low balance should revert', async function () {
+      it('batchDepositWithProof with low balance should revert', async function () {
         await slpDeposit.setMerkleRoot(batchId, root)
 
         await expect(
-          slpDeposit.batchDeposit(
+          slpDeposit.batchDepositWithProof(
             batchId,
             proof.map((buff) => `0x${buff.toString('hex')}`),
             proofFlags,
@@ -139,11 +139,11 @@ describe('SLPDeposit', function () {
         ).to.revertedWith('Insufficient balance')
       })
 
-      it('batchDeposit by attacker should revert', async function () {
+      it('batchDepositWithProof by attacker should revert', async function () {
         await slpDeposit.setMerkleRoot(batchId, root)
 
         await expect(
-          slpDeposit.connect(attacker).batchDeposit(
+          slpDeposit.connect(attacker).batchDepositWithProof(
             batchId,
             proof.map((buff) => `0x${buff.toString('hex')}`),
             proofFlags,
@@ -152,9 +152,9 @@ describe('SLPDeposit', function () {
         ).to.revertedWith('Ownable: caller is not the owner')
       })
 
-      it('batchDeposit without merkle root should revert', async function () {
+      it('batchDepositWithProof without merkle root should revert', async function () {
         await expect(
-          slpDeposit.batchDeposit(
+          slpDeposit.batchDepositWithProof(
             batchId,
             proof.map((buff) => `0x${buff.toString('hex')}`),
             proofFlags,
