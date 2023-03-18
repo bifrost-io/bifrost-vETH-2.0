@@ -32,7 +32,7 @@ contract SLPDeposit is OwnableUpgradeable {
 
     /* ========== EVENTS ========== */
 
-    event EthDeposited(address indexed sender, uint256 tokenAamount);
+    event EthDeposited(address indexed sender, uint256 tokenAmount);
 
     /* ========== CONSTANTS ========== */
 
