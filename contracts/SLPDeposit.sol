@@ -39,7 +39,9 @@ contract SLPDeposit is OwnableUpgradeable {
 
     /* ========== CONSTANTS ========== */
 
-    uint256 public constant DEPOSIT_ETH = 32 ether;
+    uint256 public constant DEPOSIT_SIZE = 32 ether;
+    // Refer to https://github.com/lidofinance/lido-dao/blob/14503a5a9c7c46864704bb3561e22ae2f84a04ff/contracts/0.8.9/BeaconChainDepositor.sol#L27
+    uint64 public constant DEPOSIT_SIZE_IN_GWEI_LE64 = 0x0040597307000000;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -49,6 +51,8 @@ contract SLPDeposit is OwnableUpgradeable {
     mapping(uint256 => bytes32) public merkleRoots;
     // SLP core address
     address public slpCore;
+    // withdrawal_credentials with prefix 0x01
+    bytes public withdrawalCredentials;
 
     function initialize(address _depositContract) public initializer {
         require(_depositContract != address(0), "Invalid deposit contract");
@@ -63,7 +67,7 @@ contract SLPDeposit is OwnableUpgradeable {
         emit EthDeposited(msg.sender, msg.value);
     }
 
-    function batchDeposit(
+    function batchDepositWithProof(
         uint256 batchId,
         bytes32[] memory proof,
         bool[] memory proofFlags,
@@ -86,6 +90,14 @@ contract SLPDeposit is OwnableUpgradeable {
         }
     }
 
+    function batchDeposit(Validator[] calldata validators) external onlyOwner {
+        require(withdrawalCredentials[0] == 0x01, "Wrong credential prefix");
+        for (uint256 i = 0; i < validators.length; i++) {
+            require(checkDepositDataRoot(validators[i]), "Invalid deposit data");
+            innerDeposit(validators[i]);
+        }
+    }
+
     function withdrawETH(address recipient, uint256 amount) external onlySLPCore {
         _sendValue(payable(recipient), amount);
     }
@@ -94,6 +106,11 @@ contract SLPDeposit is OwnableUpgradeable {
         require(merkleRoots[batchId] == bytes32(0), "Merkle root exists");
         require(merkleRoot != bytes32(0), "Invalid merkle root");
         merkleRoots[batchId] = merkleRoot;
+    }
+
+    function setCredential(address receiver) external onlyOwner {
+        require(receiver != address(0), "Invalid receiver");
+        withdrawalCredentials = abi.encodePacked(bytes12(0x010000000000000000000000), receiver);
     }
 
     function setSLPCore(address _slpCore) external onlyOwner {
@@ -108,16 +125,39 @@ contract SLPDeposit is OwnableUpgradeable {
         require(success, "Unable to send value");
     }
 
-    /* ========== VIEWS ========== */
-
     function innerDeposit(Validator memory validator) private {
-        require(address(this).balance >= DEPOSIT_ETH, "Insufficient balance");
-        depositContract.deposit{value: DEPOSIT_ETH}(
+        require(address(this).balance >= DEPOSIT_SIZE, "Insufficient balance");
+        depositContract.deposit{value: DEPOSIT_SIZE}(
             validator.pubkey,
             validator.withdrawal_credentials,
             validator.signature,
             validator.deposit_data_root
         );
+    }
+
+    /* ========== VIEWS ========== */
+
+    function checkDepositDataRoot(Validator calldata validator) public view returns (bool) {
+        Validator memory _validator = getValidatorData(validator.pubkey, validator.signature);
+        return _validator.deposit_data_root == validator.deposit_data_root;
+    }
+
+    function getValidatorData(bytes calldata pubkey, bytes calldata signature) public view returns (Validator memory) {
+        bytes32 pubkey_root = sha256(abi.encodePacked(pubkey, bytes16(0)));
+        bytes32 signature_root = sha256(
+            abi.encodePacked(
+                sha256(abi.encodePacked(signature[:64])),
+                sha256(abi.encodePacked(signature[64:], bytes32(0)))
+            )
+        );
+        bytes32 deposit_data_root = sha256(
+            abi.encodePacked(
+                sha256(abi.encodePacked(pubkey_root, withdrawalCredentials)),
+                sha256(abi.encodePacked(DEPOSIT_SIZE_IN_GWEI_LE64, bytes24(0), signature_root))
+            )
+        );
+
+        return Validator(pubkey, withdrawalCredentials, signature, deposit_data_root);
     }
 
     modifier onlySLPCore() {
