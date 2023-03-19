@@ -41,22 +41,35 @@ const deployFunction: DeployFunction = async function ({
   console.log('SLPCore deployed at', address)
 
   const slpDeposit = await ethers.getContractAt('SLPDeposit', SLPDeposit)
-  const tx1_1 = await slpDeposit.setSLPCore(address)
-  console.log(`Send slpDeposit.setSLPCore: ${tx1_1.hash}`)
-  const tx1_2 = await slpDeposit.setCredential(WithdrawalVault)
-  console.log(`Send slpDeposit.setCredential: ${tx1_2.hash}`)
-
+  if ((await slpDeposit.slpCore()) !== address) {
+    const tx = await slpDeposit.setSLPCore(address)
+    console.log('\x1b[32m%s\x1b[0m', `Call slpDeposit.setSLPCore: ${tx.hash}`)
+    await tx.wait()
+  }
+  if (
+    (await slpDeposit.withdrawalCredentials()) !== `0x010000000000000000000000${WithdrawalVault.slice(2)}`.toLowerCase()
+  ) {
+    const tx = await slpDeposit.setCredential(WithdrawalVault)
+    console.log('\x1b[32m%s\x1b[0m', `Call slpDeposit.setCredential: ${tx.hash}`)
+    await tx.wait()
+  }
   const mevVault = await ethers.getContractAt('MevVault', MevVault)
-  const tx2 = await mevVault.setSLPCore(address)
-  console.log(`Send mevVault.setSLPCore: ${tx2.hash}`)
-
+  if ((await mevVault.slpCore()) !== address) {
+    const tx = await mevVault.setSLPCore(address)
+    console.log('\x1b[32m%s\x1b[0m', `Call mevVault.setSLPCore: ${tx.hash}`)
+    await tx.wait()
+  }
   const withdrawalVault = await ethers.getContractAt('WithdrawalVault', WithdrawalVault)
-  const tx3 = await withdrawalVault.setSLPCore(address)
-  console.log(`Send withdrawalVault.setSLPCore: ${tx3.hash}`)
-
+  if ((await withdrawalVault.slpCore()) !== address) {
+    const tx = await withdrawalVault.setSLPCore(address)
+    console.log('\x1b[32m%s\x1b[0m', `Call withdrawalVault.setSLPCore: ${tx.hash}`)
+    await tx.wait()
+  }
   const vETH2Contract = await ethers.getContractAt('vETH2', (await deployments.get('vETH2')).address)
-  const tx4 = await vETH2Contract.setSLPCore(address)
-  console.log(`Call vETH2.setSLPCore: ${tx4.hash}`)
+  if ((await vETH2Contract.slpCore()) !== address) {
+    const tx = await vETH2Contract.setSLPCore(address)
+    console.log('\x1b[32m%s\x1b[0m', `Call vETH2.setSLPCore: ${tx.hash}`)
+  }
 }
 
 export default deployFunction
