@@ -141,6 +141,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         require(tokenAmount <= canWithdrawalAmount(msg.sender), "Insufficient withdrawal amount");
 
         withdrawal.pending = withdrawal.pending - tokenAmount;
+        withdrawal.queued = withdrawal.queued + tokenAmount;
         completedWithdrawal = completedWithdrawal + tokenAmount;
         _sendValue(payable(msg.sender), tokenAmount);
 
