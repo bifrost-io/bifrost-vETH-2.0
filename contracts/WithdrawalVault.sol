@@ -26,7 +26,7 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     /* ========== CONSTANTS ========== */
 
-    uint256 public constant DEPOSIT_ETH = 32 ether;
+    uint256 public constant DEPOSIT_SIZE = 32 ether;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -53,7 +53,7 @@ contract WithdrawalVault is OwnableUpgradeable {
     function withdrawWithdrawals(uint256 _amount) external onlyOperator {
         require(_amount > 0, "Zero amount");
         require(_amount <= address(this).balance, "Not enough balance");
-        require(totalWithdrawalAmount + _amount <= withdrawalNodeNumber * DEPOSIT_ETH, "Exceed total ETH");
+        require(totalWithdrawalAmount + _amount <= withdrawalNodeNumber * DEPOSIT_SIZE, "Exceed total ETH");
         totalWithdrawalAmount = totalWithdrawalAmount + _amount;
         slpCore.depositWithdrawal{value: _amount}();
 
@@ -62,7 +62,7 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     function increaseWithdrawalNode(uint256 n) external onlyOperator {
         require(
-            (withdrawalNodeNumber + n) * DEPOSIT_ETH <= totalWithdrawalAmount + address(this).balance,
+            (withdrawalNodeNumber + n) * DEPOSIT_SIZE <= totalWithdrawalAmount + address(this).balance,
             "Exceed total ETH"
         );
         withdrawalNodeNumber += n;
@@ -76,7 +76,7 @@ contract WithdrawalVault is OwnableUpgradeable {
         rewardDays[paidAt] = true;
 
         require(
-            _rewardAmount <= (totalWithdrawalAmount + address(this).balance) - (withdrawalNodeNumber * DEPOSIT_ETH),
+            _rewardAmount <= (totalWithdrawalAmount + address(this).balance) - (withdrawalNodeNumber * DEPOSIT_SIZE),
             "Exceed total ETH"
         );
         require(_rewardAmount <= address(this).balance, "Not enough ETH");
