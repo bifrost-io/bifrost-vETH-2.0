@@ -104,10 +104,6 @@ describe('MockWithdrawalVault', function () {
         .withArgs(operator.address, 1)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
 
-      expect(await mockWithdrawalVault.connect(operator).withdrawWithdrawals(ethers.utils.parseEther('32')))
-        .to.emit(mockWithdrawalVault, 'Withdrawn')
-        .withArgs(operator.address, ethers.utils.parseEther('32'))
-
       await deployer.sendTransaction({
         to: mockWithdrawalVault.address,
         value: ethers.utils.parseEther('320'),
@@ -116,10 +112,6 @@ describe('MockWithdrawalVault', function () {
         .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
         .withArgs(operator.address, 10)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(11)
-
-      expect(await mockWithdrawalVault.connect(operator).withdrawWithdrawals(ethers.utils.parseEther('32').mul(10)))
-        .to.emit(mockWithdrawalVault, 'Withdrawn')
-        .withArgs(operator.address, ethers.utils.parseEther('32').mul(10))
     })
 
     it('increaseWithdrawalNode exceed total ETH should revert', async function () {
@@ -127,7 +119,7 @@ describe('MockWithdrawalVault', function () {
         to: mockWithdrawalVault.address,
         value: ethers.utils.parseEther('31.99999'),
       })
-      await expect(mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)).to.revertedWith('Exceed total ETH')
+      await expect(mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)).to.revertedWith('Not enough ETH')
 
       await deployer.sendTransaction({
         to: mockWithdrawalVault.address,
@@ -137,7 +129,7 @@ describe('MockWithdrawalVault', function () {
         .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
         .withArgs(operator.address, 10)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(10)
-      await expect(mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)).to.revertedWith('Exceed total ETH')
+      await expect(mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)).to.revertedWith('Not enough ETH')
     })
   })
 
@@ -185,7 +177,7 @@ describe('MockWithdrawalVault', function () {
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
 
       await expect(mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.51'))).to.revertedWith(
-        'Exceed total ETH'
+        'Not enough ETH'
       )
     })
 

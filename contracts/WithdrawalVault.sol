@@ -21,7 +21,6 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     event RewardAdded(address indexed sender, uint256 amount);
     event RewardRemoved(address indexed sender, uint256 amount);
-    event Withdrawn(address indexed sender, uint256 amount);
     event WithdrawalNodeIncreased(address indexed sender, uint256 number);
 
     /* ========== CONSTANTS ========== */
@@ -50,22 +49,13 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
-    function withdrawWithdrawals(uint256 _amount) external onlyOperator {
-        require(_amount > 0, "Zero amount");
-        require(_amount <= address(this).balance, "Not enough balance");
-        require(totalWithdrawalAmount + _amount <= withdrawalNodeNumber * DEPOSIT_SIZE, "Exceed total ETH");
-        totalWithdrawalAmount = totalWithdrawalAmount + _amount;
-        slpCore.depositWithdrawal{value: _amount}();
-
-        emit Withdrawn(msg.sender, _amount);
-    }
-
     function increaseWithdrawalNode(uint256 n) external onlyOperator {
-        require(
-            (withdrawalNodeNumber + n) * DEPOSIT_SIZE <= totalWithdrawalAmount + address(this).balance,
-            "Exceed total ETH"
-        );
+        uint256 withdrawalAmount = n * DEPOSIT_SIZE;
+        require(withdrawalAmount <= address(this).balance, "Not enough ETH");
+
         withdrawalNodeNumber += n;
+        totalWithdrawalAmount = totalWithdrawalAmount + withdrawalAmount;
+        slpCore.depositWithdrawal{value: withdrawalAmount}();
 
         emit WithdrawalNodeIncreased(msg.sender, n);
     }
@@ -75,10 +65,6 @@ contract WithdrawalVault is OwnableUpgradeable {
         require(!rewardDays[paidAt], "Paid today");
         rewardDays[paidAt] = true;
 
-        require(
-            _rewardAmount <= (totalWithdrawalAmount + address(this).balance) - (withdrawalNodeNumber * DEPOSIT_SIZE),
-            "Exceed total ETH"
-        );
         require(_rewardAmount <= address(this).balance, "Not enough ETH");
         slpCore.addReward(_rewardAmount);
         slpDeposit.depositETH{value: _rewardAmount}();
