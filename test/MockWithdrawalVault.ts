@@ -43,7 +43,8 @@ describe('MockWithdrawalVault', function () {
     await vETH2.mint(deployer.address, ethers.utils.parseEther('1'))
     await slpDeposit.initialize(depositContract.address)
     await mevVault.initialize(depositContract.address, operator.address)
-    await mockWithdrawalVault.initialize(slpDeposit.address, operator.address)
+    const rewardNumerator = ethers.utils.parseEther('0.05') // 5%
+    await mockWithdrawalVault.initialize(slpDeposit.address, operator.address, rewardNumerator)
     await slpCore.initialize(
       vETH1.address,
       vETH2.address,
@@ -63,7 +64,7 @@ describe('MockWithdrawalVault', function () {
     expect(await mockWithdrawalVault.slpCore()).to.equal(slpCore.address)
     expect(await mockWithdrawalVault.operator()).to.equal(operator.address)
     expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
-    expect(await mockWithdrawalVault.totalWithdrawalAmount()).to.equal(0)
+    expect(await mockWithdrawalVault.rewardNumerator()).to.equal(ethers.utils.parseEther('0.05'))
   })
 
   it('transfer owner should be ok', async function () {
@@ -160,31 +161,52 @@ describe('MockWithdrawalVault', function () {
         .withArgs(operator.address, 1)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
 
-      expect(await mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.5')))
+      expect(await mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.15')))
         .to.emit(mockWithdrawalVault, 'RewardAdded')
-        .withArgs(operator.address, ethers.utils.parseEther('0.5'))
+        .withArgs(operator.address, ethers.utils.parseEther('0.15'))
     })
 
     it('addReward exceed total ETH should revert', async function () {
       await deployer.sendTransaction({
         to: mockWithdrawalVault.address,
-        value: ethers.utils.parseEther('32.5'),
+        value: ethers.utils.parseEther('32.04'),
       })
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
       expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1))
         .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
         .withArgs(operator.address, 1)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
-
-      await expect(mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.51'))).to.revertedWith(
+      await expect(mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.05'))).to.revertedWith(
         'Not enough ETH'
       )
     })
 
+    it('addReward too large should revert', async function () {
+      await deployer.sendTransaction({
+        to: mockWithdrawalVault.address,
+        value: ethers.utils.parseEther('32.151'),
+      })
+      expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
+      expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1))
+        .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
+        .withArgs(operator.address, 1)
+      expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
+      await expect(mockWithdrawalVault.connect(operator).addReward(ethers.utils.parseEther('0.151'))).to.revertedWith(
+        'Reward variation too large'
+      )
+    })
+
     it('removeReward should be ok', async function () {
-      expect(await mockWithdrawalVault.connect(operator).removeReward(ethers.utils.parseEther('0.5')))
+      expect(await mockWithdrawalVault.connect(operator).removeReward(ethers.utils.parseEther('0.15')))
         .to.emit(mockWithdrawalVault, 'RewardRemoved')
-        .withArgs(operator.address, ethers.utils.parseEther('0.5'))
+        .withArgs(operator.address, ethers.utils.parseEther('0.15'))
+    })
+
+    it('removeReward too large should revert', async function () {
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('3'))
+      await expect(mockWithdrawalVault.connect(operator).removeReward(ethers.utils.parseEther('0.151'))).revertedWith(
+        'Reward variation too large'
+      )
     })
   })
 })

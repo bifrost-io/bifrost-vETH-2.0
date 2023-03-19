@@ -1,6 +1,7 @@
 import { DeployFunction } from 'hardhat-deploy/types'
 import { HardhatRuntimeEnvironment } from 'hardhat/types'
 import { CHAIN_ID, OPERATOR_ADDRESS } from '../constants/constants'
+import { ethers } from 'hardhat'
 
 const deployFunction: DeployFunction = async function ({
   deployments,
@@ -15,6 +16,7 @@ const deployFunction: DeployFunction = async function ({
   const SLPDeposit = (await deployments.get('SLPDeposit')).address
   const chainId = network.config.chainId as CHAIN_ID
   const operator = OPERATOR_ADDRESS[chainId]
+  const rewardNumerator = ethers.utils.parseEther('0.05') // 5%
 
   const { address } = await deploy('WithdrawalVault', {
     from: deployer,
@@ -25,7 +27,7 @@ const deployFunction: DeployFunction = async function ({
       execute: {
         init: {
           methodName: 'initialize',
-          args: [SLPDeposit, operator],
+          args: [SLPDeposit, operator, rewardNumerator],
         },
       },
     },
