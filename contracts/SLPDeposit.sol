@@ -61,6 +61,7 @@ contract SLPDeposit is OwnableUpgradeable {
 
     /* ========== MUTATIVE FUNCTIONS ========== */
 
+    // If you don't know the purpose of this method, please don't call it directly
     function depositETH() external payable {
         emit EthDeposited(msg.sender, msg.value);
     }
