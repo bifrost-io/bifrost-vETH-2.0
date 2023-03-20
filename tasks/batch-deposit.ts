@@ -1,67 +1,48 @@
 import { task } from 'hardhat/config'
-import axios from 'axios'
-import { CHAIN_ID, SLP_DEPOSIT_MERKLE_ROOT } from '../constants/constants'
 
 task('batch-deposit', 'Batch deposit ETH')
   .addParam('skip', 'Skip items')
   .addParam('take', 'Take items')
-  .setAction(async function (params: { skip: number; take: number }, { ethers, network }) {
-    const slpDeposit = await ethers.deployContract('SLPDeposit')
-    const depositContract = await ethers.deployContract('DepositContract')
-    await slpDeposit.initialize(depositContract.address)
-
-    const batchId = 0
-    const chainId = network.config.chainId as CHAIN_ID
-    const merkleRoot = SLP_DEPOSIT_MERKLE_ROOT[chainId]
-    await slpDeposit.setMerkleRoot(batchId, merkleRoot)
-    console.log('\x1b[32m%s\x1b[0m', `Merkle root at batchId 0 is ${await slpDeposit.merkleRoots(batchId)}`)
+  .setAction(async function (params: { skip: number; take: number }, { ethers, network, deployments }) {
+    const slpDeposit = await ethers.getContractAt('SLPDeposit', (await deployments.get('SLPDeposit')).address)
 
     try {
-      // @ts-ignore
-      const { proof, proofFlags } = await queryProof(params.skip, params.take)
-      const leaves = await queryValidators(params.skip, params.take)
+      console.log(await slpDeposit.withdrawalCredentials())
 
-      const depositAmount = ethers.utils.parseEther('32').mul(leaves.length)
-      await slpDeposit.depositETH({ value: depositAmount })
+      const validators = {
+        pubkey: 'b0a8765d60745a052b68d2e3be7ac03feea09a43de4b25ba07fae9417bde05c0642b3f4a394f6520a24490f4c810586d',
+        withdrawal_credentials: '0100000000000000000000004b014ea4b2a60bf03ed6743f821ee8d66bd3cf09',
+        amount: 32000000000,
+        signature:
+          'a6cdb0a39a73886da7bf554feab002258059878fb82a1c7d98a0ea688db0b9279798cc4c782dfacd23f4aa97c82b520716fa0c648453be2fa19a5882efd063c2ac5f140bd7ef1e6e1353cfe87d37c61beabb9aa42e5a5149af4156169d3051be',
+        deposit_message_root: 'd903ad7cb69fe95dcd356469ceceece2338aa94cf8e62b1bdd1e9da31506a612',
+        deposit_data_root: 'c6606f32a691947d98485e1ac161da887d30441c5904c54eecf860cfef4df170',
+        fork_version: '00000069',
+        network_name: 'zhejiang',
+        deposit_cli_version: '2.5.0',
+      }
+      console.log(await slpDeposit.getValidatorData(`0x${validators.pubkey}`, `0x${validators.signature}`))
 
-      await slpDeposit.batchDeposit(batchId, proof, proofFlags, leaves)
+      console.log(
+        await slpDeposit.checkDepositDataRoot([
+          `0x${validators.pubkey}`,
+          `0x${validators.withdrawal_credentials}`,
+          `0x${validators.signature}`,
+          `0x${validators.deposit_data_root}`,
+        ])
+      )
+
+      await slpDeposit.batchDeposit([
+        [
+          `0x${validators.pubkey}`,
+          `0x${validators.withdrawal_credentials}`,
+          `0x${validators.signature}`,
+          `0x${validators.deposit_data_root}`,
+        ],
+      ])
     } catch (e) {
       console.log(e)
     }
 
     console.log('Batch deposited!')
   })
-
-async function queryProof(skip: number, take: number) {
-  try {
-    const url = `http://localhost:3000/api/v1/origins/multi_proof?skip=${skip}&take=${take}`
-    const response = await axios.get(url)
-    const { proof, proofFlags } = response.data
-
-    return {
-      proof,
-      proofFlags,
-    }
-  } catch (e) {
-    console.log(e)
-  }
-}
-
-async function queryValidators(skip: number, take: number) {
-  try {
-    const url = `http://localhost:3000/api/v1/origins?skip=${skip}&take=${take}`
-    const response = await axios.get(url)
-    const data = response.data
-
-    return data.map((item: any) => {
-      return {
-        pubkey: `0x${item.pubkey}`,
-        withdrawal_credentials: `0x${item.withdrawal_credentials}`,
-        signature: `0x${item.signature}`,
-        deposit_data_root: `0x${item.deposit_data_root}`,
-      }
-    })
-  } catch (e) {
-    console.log(e)
-  }
-}

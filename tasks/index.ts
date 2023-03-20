@@ -1,5 +1,6 @@
 import './accounts'
 import './batch-deposit'
+import './batch-deposit-proof'
 import './user-claim'
 import './veth1-mint'
 import './veth2-mint'
