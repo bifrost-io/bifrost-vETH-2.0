@@ -302,6 +302,13 @@ describe('MockMevVault', function () {
       )
     })
 
+    it('addReward twice in one day should revert', async function () {
+      await expect(mevVault.connect(operator).addReward())
+        .to.emit(mevVault, 'RewardAdded')
+        .withArgs(operator.address, slpDeposit.address, 0)
+      await expect(mevVault.connect(operator).addReward()).revertedWith('Paid today')
+    })
+
     it('addReward by attacker should revert', async function () {
       await expect(mevVault.connect(attacker).addReward()).revertedWith('Caller is not operator')
     })
