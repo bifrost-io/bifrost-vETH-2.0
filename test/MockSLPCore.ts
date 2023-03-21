@@ -268,18 +268,20 @@ describe('MockSLPCore', function () {
         .to.emit(slpCore, 'Deposited')
         .withArgs(user1.address, amount, amount)
       expect(await vETH2.balanceOf(user1.address)).to.equal(amount)
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('2'))
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('2'))
       expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('1'))
 
       await expect(slpCore.connect(user2).mint({ value: amount }))
         .to.emit(slpCore, 'Deposited')
         .withArgs(user2.address, amount, amount)
       expect(await vETH2.balanceOf(user2.address)).to.equal(amount)
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('3'))
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('3'))
       expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('2'))
     })
 
     it('withdrawRequest and withdrawComplete should be ok', async function () {
-      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('3'))
-
       const vETHAmount = ethers.utils.parseEther('0.1')
       const ethAmount = ethers.utils.parseEther('0.1')
       await vETH2.connect(user1).approve(slpCore.address, vETHAmount)
@@ -291,6 +293,7 @@ describe('MockSLPCore', function () {
       expect(withdrawalUser1.pending).to.equal(ethers.utils.parseEther('0.1'))
       expect(withdrawalUser1.queued).to.equal(0)
       expect(await slpCore.queuedWithdrawal()).to.equal(ethers.utils.parseEther('0.1'))
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('2.9'))
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('2.9'))
 
       await vETH2.connect(user2).approve(slpCore.address, vETHAmount)
@@ -301,12 +304,14 @@ describe('MockSLPCore', function () {
       expect(withdrawalUser2.pending).to.equal(ethers.utils.parseEther('0.1'))
       expect(withdrawalUser2.queued).to.equal(ethers.utils.parseEther('0.1'))
       expect(await slpCore.queuedWithdrawal()).to.equal(ethers.utils.parseEther('0.2'))
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('2.8'))
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('2.8'))
 
       await deployer.sendTransaction({
         to: slpCore.address,
         value: ethers.utils.parseEther('32'),
       })
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('32'))
 
       expect(await slpCore.canWithdrawalAmount(user1.address)).to.equal(ethers.utils.parseEther('0.1'))
       expect(await slpCore.canWithdrawalAmount(user2.address)).to.equal(ethers.utils.parseEther('0.1'))
@@ -314,10 +319,12 @@ describe('MockSLPCore', function () {
       await expect(slpCore.connect(user1).withdrawComplete(ethAmount))
         .to.emit(slpCore, 'WithdrawalCompleted')
         .withArgs(user1.address, ethAmount)
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('31.9'))
 
-      await expect(slpCore.connect(user2).withdrawComplete(ethAmount))
+      await expect(slpCore.connect(user2).withdrawComplete(0))
         .to.emit(slpCore, 'WithdrawalCompleted')
         .withArgs(user2.address, ethAmount)
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('31.8'))
     })
 
     it('withdrawRequest zero amount should revert', async function () {
@@ -338,7 +345,20 @@ describe('MockSLPCore', function () {
       expect(await slpCore.queuedWithdrawal()).to.equal(ethers.utils.parseEther('0.1'))
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('2.9'))
 
+      expect(await slpCore.canWithdrawalAmount(user1.address)).to.equal(ethers.utils.parseEther('0'))
       await expect(slpCore.connect(user1).withdrawComplete(ethAmount)).revertedWith('Insufficient withdrawal amount')
+
+      await deployer.sendTransaction({
+        to: slpCore.address,
+        value: ethers.utils.parseEther('0.05'),
+      })
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('0.05'))
+
+      expect(await slpCore.canWithdrawalAmount(user1.address)).to.equal(ethers.utils.parseEther('0.05'))
+      await expect(slpCore.connect(user1).withdrawComplete(ethers.utils.parseEther('0.05')))
+        .to.emit(slpCore, 'WithdrawalCompleted')
+        .withArgs(user1.address, ethers.utils.parseEther('0.05'))
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('0'))
     })
   })
 })

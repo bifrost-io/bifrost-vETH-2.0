@@ -117,9 +117,10 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function withdrawRequest(uint256 vTokenAmount) external nonReentrant whenNotPaused {
+        require(vTokenAmount > 0, "Zero amount");
         Withdrawal storage withdrawal = withdrawals[msg.sender];
-        // calculate ETH
         uint256 tokenAmount = calculateTokenAmount(vTokenAmount);
+        require(tokenAmount > 0, "Zero amount");
         withdrawal.pending = withdrawal.pending + tokenAmount;
         withdrawal.queued = queuedWithdrawal;
         queuedWithdrawal = queuedWithdrawal + tokenAmount;
