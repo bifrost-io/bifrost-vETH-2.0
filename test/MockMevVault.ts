@@ -26,7 +26,7 @@ describe('MockMevVault', function () {
     const DepositContract = await ethers.getContractFactory('DepositContract')
     const VETH1 = await ethers.getContractFactory('vETH1')
     const VETH2 = await ethers.getContractFactory('vETH2')
-    const SLPDeposit = await ethers.getContractFactory('MockSLPDeposit')
+    const SLPDeposit = await ethers.getContractFactory('SLPDeposit')
     const MevVault = await ethers.getContractFactory('MevVault')
     const WithdrawalVault = await ethers.getContractFactory('WithdrawalVault')
     const SLPCore = await ethers.getContractFactory('SLPCore')
@@ -196,32 +196,43 @@ describe('MockMevVault', function () {
 
     it('addReward per day should be ok', async function () {
       // no reward
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(0)
       await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
         .withArgs(operator.address, slpDeposit.address, 0)
       let reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0'))
+      expect(await mevVault.getReward()).to.equal(0)
 
       // pay reward
       for (let i = 0; i < 30; i++) {
         await time.increase(time.duration.days(1))
+        expect(await mevVault.getReward()).to.equal(ethers.utils.parseEther('0.033333333333333333'))
         await expect(mevVault.connect(operator).addReward())
           .to.emit(mevVault, 'RewardAdded')
           .withArgs(operator.address, slpDeposit.address, ethers.utils.parseEther('0.033333333333333333'))
+        expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(
+          ethers.utils.parseEther('0.033333333333333333').mul(i + 1)
+        )
       }
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(
+        ethers.utils.parseEther('0.999999999999999990')
+      )
 
       // no reward
+      expect(await mevVault.getReward()).to.equal(ethers.utils.parseEther('0'))
       await time.increase(time.duration.days(1))
+      expect(await mevVault.getReward()).to.equal(ethers.utils.parseEther('0'))
       await expect(mevVault.connect(operator).addReward())
         .to.emit(mevVault, 'RewardAdded')
         .withArgs(operator.address, slpDeposit.address, 0)
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(
+        ethers.utils.parseEther('0.999999999999999990')
+      )
     })
 
     it('addReward per 10 day should be ok', async function () {
@@ -231,7 +242,7 @@ describe('MockMevVault', function () {
         .withArgs(operator.address, slpDeposit.address, 0)
       let reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(0)
 
       // pay reward
       for (let i = 0; i < 3; i++) {
@@ -242,7 +253,9 @@ describe('MockMevVault', function () {
       }
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(
+        ethers.utils.parseEther('0.999999999999999990')
+      )
 
       // no reward
       await time.increase(time.duration.days(1))
@@ -251,7 +264,9 @@ describe('MockMevVault', function () {
         .withArgs(operator.address, slpDeposit.address, 0)
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(
+        ethers.utils.parseEther('0.999999999999999990')
+      )
     })
 
     it('addReward one time should be ok', async function () {
@@ -261,7 +276,7 @@ describe('MockMevVault', function () {
         .withArgs(operator.address, slpDeposit.address, 0)
       let reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(0)
 
       // pay reward
       await time.increase(time.duration.days(100))
@@ -270,7 +285,9 @@ describe('MockMevVault', function () {
         .withArgs(operator.address, slpDeposit.address, ethers.utils.parseEther('0.999999999999999990'))
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(
+        ethers.utils.parseEther('0.999999999999999990')
+      )
 
       // no reward
       await time.increase(time.duration.days(100))
@@ -280,7 +297,9 @@ describe('MockMevVault', function () {
 
       reward = await mevVault.reward()
       expect(reward.paid).to.equal(ethers.utils.parseEther('0.999999999999999990'))
-      expect(await slpDeposit.getBalance()).to.equal(ethers.utils.parseEther('0.999999999999999990'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(
+        ethers.utils.parseEther('0.999999999999999990')
+      )
     })
 
     it('addReward by attacker should revert', async function () {
