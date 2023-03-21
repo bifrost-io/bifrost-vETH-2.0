@@ -39,7 +39,7 @@ describe('MockMevVault', function () {
     withdrawalVault = await WithdrawalVault.deploy()
     slpCore = await SLPCore.deploy()
 
-    const feeRate = 100
+    const feeRate = ethers.utils.parseEther('0.05') // 5%
     await vETH2.setSLPCore(deployer.address)
     await vETH2.mint(deployer.address, ethers.utils.parseEther('1'))
     await slpDeposit.initialize(depositContract.address)
