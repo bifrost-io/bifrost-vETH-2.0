@@ -233,9 +233,15 @@ describe('MockSLPCore', function () {
         .withArgs(mockWithdrawalVault.address, reward)
       expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('0.9'))
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('1'))
+      expect(await slpCore.calculateVTokenAmount(ethers.utils.parseEther('1'))).to.equal(
+        ethers.utils.parseEther('1.111111111111111111')
+      )
+      expect(await slpCore.calculateTokenAmount(ethers.utils.parseEther('1.111111111111111111'))).to.equal(
+        ethers.utils.parseEther('0.999999999999999999')
+      )
 
       const tokenAmount = ethers.utils.parseEther('1')
-      const vTokenAmount = 1111111111111111111n
+      const vTokenAmount = ethers.utils.parseEther('1.111111111111111111')
       await expect(slpCore.connect(user1).mint({ value: tokenAmount }))
         .to.emit(slpCore, 'Deposited')
         .withArgs(user1.address, tokenAmount, vTokenAmount)
