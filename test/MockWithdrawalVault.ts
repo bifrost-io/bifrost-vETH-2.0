@@ -99,19 +99,26 @@ describe('MockWithdrawalVault', function () {
         to: mockWithdrawalVault.address,
         value: ethers.utils.parseEther('32'),
       })
+      expect(await ethers.provider.getBalance(mockWithdrawalVault.address)).to.equal(ethers.utils.parseEther('32'))
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(0)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
       expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1))
         .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
         .withArgs(operator.address, 1)
+      expect(await ethers.provider.getBalance(mockWithdrawalVault.address)).to.equal(0)
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('32'))
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
 
       await deployer.sendTransaction({
         to: mockWithdrawalVault.address,
         value: ethers.utils.parseEther('320'),
       })
+      expect(await ethers.provider.getBalance(mockWithdrawalVault.address)).to.equal(ethers.utils.parseEther('320'))
       expect(await mockWithdrawalVault.connect(operator).increaseWithdrawalNode(10))
         .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
         .withArgs(operator.address, 10)
+      expect(await ethers.provider.getBalance(mockWithdrawalVault.address)).to.equal(0)
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('352'))
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(11)
     })
 
