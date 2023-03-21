@@ -61,7 +61,7 @@ contract MevVault is OwnableUpgradeable {
         require(!rewardDays[paidAt], "Paid today");
         rewardDays[paidAt] = true;
 
-        uint256 rewardAmount = reward.pending + (reward.perDay * getDays());
+        uint256 rewardAmount = getReward();
         require(reward.paid + rewardAmount <= reward.total, "Pay amount exceeds range");
 
         reward.lastPaidAt = paidAt <= reward.finishAt ? paidAt : reward.finishAt;
@@ -105,6 +105,10 @@ contract MevVault is OwnableUpgradeable {
     function getDays() public view returns (uint256 times) {
         uint256 endAt = block.timestamp <= reward.finishAt ? block.timestamp : reward.finishAt;
         times = (endAt - reward.lastPaidAt) / (1 days);
+    }
+
+    function getReward() public view returns (uint256) {
+        return reward.pending + (reward.perDay * getDays());
     }
 
     /* ========== MODIFIER ========== */
