@@ -94,8 +94,8 @@ describe('MockSLPCore', function () {
   })
 
   it('setFeeRate by owner should be ok', async function () {
-    await slpCore.setFeeRate(ethers.utils.parseEther('0.02'))
-    expect(await slpCore.feeRate()).to.equal(ethers.utils.parseEther('0.02'))
+    await slpCore.setFeeRate(ethers.utils.parseEther('1'))
+    expect(await slpCore.feeRate()).to.equal(ethers.utils.parseEther('1'))
   })
 
   it('setFeeRate exceeds range should revert', async function () {
@@ -121,7 +121,6 @@ describe('MockSLPCore', function () {
 
   describe('mint and renew', function () {
     beforeEach(async function () {
-      await vETH2.transferOwnership(slpCore.address)
       await vETH1.mint(user1.address, ethers.utils.parseEther('100'))
       await vETH1.mint(user2.address, ethers.utils.parseEther('100'))
     })
@@ -132,14 +131,20 @@ describe('MockSLPCore', function () {
         .to.emit(slpCore, 'Deposited')
         .withArgs(user1.address, amount, amount)
       expect(await vETH2.balanceOf(user1.address)).to.equal(amount)
-      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(amount)
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(0)
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('1'))
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('2'))
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('2'))
 
       const amount2 = ethers.utils.parseEther('5')
       await expect(slpCore.connect(user1).mint({ value: amount2 }))
         .to.emit(slpCore, 'Deposited')
         .withArgs(user1.address, amount2, amount2)
       expect(await vETH2.balanceOf(user1.address)).to.equal(amount.add(amount2))
-      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(amount.add(amount2))
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(0)
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('6'))
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('7'))
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('7'))
     })
 
     it('mint with zero amount should revert', async function () {
@@ -161,6 +166,8 @@ describe('MockSLPCore', function () {
         .withArgs(user1.address, amount, amount)
       expect(await vETH2.balanceOf(user1.address)).to.equal(amount)
       expect(await vETH1.balanceOf(DEAD_ADDRESS)).to.equal(amount)
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('2'))
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('2'))
 
       const amount2 = ethers.utils.parseEther('5')
       await vETH1.connect(user1).approve(slpCore.address, amount2)
@@ -169,6 +176,8 @@ describe('MockSLPCore', function () {
         .withArgs(user1.address, amount2, amount2)
       expect(await vETH2.balanceOf(user1.address)).to.equal(amount.add(amount2))
       expect(await vETH1.balanceOf(DEAD_ADDRESS)).to.equal(amount.add(amount2))
+      expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('7'))
+      expect(await slpCore.tokenPool()).to.equal(ethers.utils.parseEther('7'))
     })
 
     it('renew with zero amount should revert', async function () {
@@ -192,6 +201,9 @@ describe('MockSLPCore', function () {
       expect(await vETH2.totalSupply()).to.equal(ethers.utils.parseEther('1.005'))
       expect(await slpCore.calculateVTokenAmount(ethers.utils.parseEther('1'))).to.equal(
         ethers.utils.parseEther('0.913636363636363636')
+      )
+      expect(await slpCore.calculateTokenAmount(ethers.utils.parseEther('0.913636363636363636'))).to.equal(
+        ethers.utils.parseEther('0.999999999999999999')
       )
 
       const tokenAmount = ethers.utils.parseEther('1')
@@ -300,6 +312,10 @@ describe('MockSLPCore', function () {
       await expect(slpCore.connect(user2).withdrawComplete(ethAmount))
         .to.emit(slpCore, 'WithdrawalCompleted')
         .withArgs(user2.address, ethAmount)
+    })
+
+    it('withdrawRequest zero amount should revert', async function () {
+      await expect(slpCore.connect(user1).withdrawRequest(0)).revertedWith('Zero amount')
     })
 
     it('withdrawComplete when has insufficient amount should revert', async function () {
