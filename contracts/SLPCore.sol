@@ -121,8 +121,8 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         Withdrawal storage withdrawal = withdrawals[msg.sender];
         uint256 tokenAmount = calculateTokenAmount(vTokenAmount);
         require(tokenAmount > 0, "Zero amount");
+        withdrawal.queued = queuedWithdrawal - withdrawal.pending;
         withdrawal.pending = withdrawal.pending + tokenAmount;
-        withdrawal.queued = queuedWithdrawal;
         queuedWithdrawal = queuedWithdrawal + tokenAmount;
         tokenPool = tokenPool - tokenAmount;
         IVETH(vETH2).burn(msg.sender, vTokenAmount);
