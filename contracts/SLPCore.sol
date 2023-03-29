@@ -163,6 +163,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function removeReward(uint256 amount) external onlyVault {
+        require(tokenPool > amount, "Insufficient pool amount");
         tokenPool = tokenPool - amount;
 
         emit RewardRemoved(msg.sender, amount);
