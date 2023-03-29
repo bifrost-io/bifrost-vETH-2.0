@@ -40,6 +40,7 @@ contract SLPDeposit is OwnableUpgradeable {
     // solhint-disable-next-line max-line-length
     // Refer to https://github.com/lidofinance/lido-dao/blob/14503a5a9c7c46864704bb3561e22ae2f84a04ff/contracts/0.8.9/BeaconChainDepositor.sol#L27
     uint64 public constant DEPOSIT_SIZE_IN_GWEI_LE64 = 0x0040597307000000;
+    uint256 public constant MAX_VALIDATORS_PER_DEPOSIT = 50;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -51,6 +52,12 @@ contract SLPDeposit is OwnableUpgradeable {
     address public slpCore;
     // withdrawal_credentials with prefix 0x01
     bytes public withdrawalCredentials;
+
+    /* ========== EVENTS ========== */
+
+    event MerkleRootSet(address indexed sender, uint256 indexed batchId, bytes32 merkleRoot);
+    event SLPCoreSet(address indexed sender, address slpCore);
+    event WithdrawalCredentialsSet(address indexed sender, bytes withdrawalCredentials);
 
     function initialize(address _depositContract) public initializer {
         require(_depositContract != address(0), "Invalid deposit contract");
@@ -72,6 +79,7 @@ contract SLPDeposit is OwnableUpgradeable {
         bool[] memory proofFlags,
         Validator[] memory validators
     ) external onlyOwner {
+        require(validators.length <= MAX_VALIDATORS_PER_DEPOSIT, "Too many validators");
         bytes32 root = merkleRoots[batchId];
         require(root != bytes32(0), "Merkle root not exists");
 
@@ -90,6 +98,7 @@ contract SLPDeposit is OwnableUpgradeable {
     }
 
     function batchDeposit(Validator[] calldata validators) external onlyOwner {
+        require(validators.length <= MAX_VALIDATORS_PER_DEPOSIT, "Too many validators");
         require(withdrawalCredentials[0] == 0x01, "Wrong credential prefix");
         for (uint256 i = 0; i < validators.length; i++) {
             require(checkDepositDataRoot(validators[i]), "Invalid deposit data");
@@ -105,16 +114,19 @@ contract SLPDeposit is OwnableUpgradeable {
         require(merkleRoots[batchId] == bytes32(0), "Merkle root exists");
         require(merkleRoot != bytes32(0), "Invalid merkle root");
         merkleRoots[batchId] = merkleRoot;
+        emit MerkleRootSet(msg.sender, batchId, merkleRoot);
     }
 
     function setCredential(address receiver) external onlyOwner {
         require(receiver != address(0), "Invalid receiver");
         withdrawalCredentials = abi.encodePacked(bytes12(0x010000000000000000000000), receiver);
+        emit WithdrawalCredentialsSet(msg.sender, withdrawalCredentials);
     }
 
     function setSLPCore(address _slpCore) external onlyOwner {
         require(_slpCore != address(0), "Invalid SLP core address");
         slpCore = _slpCore;
+        emit SLPCoreSet(msg.sender, slpCore);
     }
 
     function _sendValue(address payable recipient, uint256 amount) private {

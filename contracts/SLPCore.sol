@@ -40,6 +40,9 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     event WithdrawalCompleted(address indexed sender, uint256 tokenAmount);
     event WithdrawalDeposited(address indexed sender, uint256 tokenAmount);
 
+    event FeeRateSet(address indexed sender, uint256 feeRate);
+    event FeeReceiverSet(address indexed sender, address feeReceiver);
+
     /* ========== CONSTANTS ========== */
 
     address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
@@ -160,6 +163,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     }
 
     function removeReward(uint256 amount) external onlyVault {
+        require(tokenPool > amount, "Insufficient pool amount");
         tokenPool = tokenPool - amount;
 
         emit RewardRemoved(msg.sender, amount);
@@ -190,11 +194,13 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function _setFeeRate(uint256 _feeRate) private {
         require(_feeRate <= FEE_RATE_DENOMINATOR, "Fee rate exceeds range");
         feeRate = _feeRate;
+        emit FeeRateSet(msg.sender, _feeRate);
     }
 
     function _setFeeReceiver(address _feeReceiver) private {
         require(_feeReceiver != address(0), "Invalid fee receiver address");
         feeReceiver = _feeReceiver;
+        emit FeeReceiverSet(msg.sender, _feeReceiver);
     }
 
     function _sendValue(address payable recipient, uint256 amount) private {
@@ -208,12 +214,20 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function calculateVTokenAmount(uint256 tokenAmount) public view returns (uint256 vTokenAmount) {
         uint256 vTokenTotalSupply = IERC20Upgradeable(vETH2).totalSupply();
-        vTokenAmount = (tokenAmount * vTokenTotalSupply) / tokenPool;
+        if (vTokenTotalSupply == 0 && tokenPool == 0) {
+            vTokenAmount = tokenAmount;
+        } else {
+            vTokenAmount = (tokenAmount * vTokenTotalSupply) / tokenPool;
+        }
     }
 
     function calculateTokenAmount(uint256 vTokenAmount) public view returns (uint256 tokenAmount) {
         uint256 vTokenTotalSupply = IERC20Upgradeable(vETH2).totalSupply();
-        tokenAmount = (vTokenAmount * tokenPool) / vTokenTotalSupply;
+        if (vTokenTotalSupply == 0 && tokenPool == 0) {
+            tokenAmount = vTokenAmount;
+        } else {
+            tokenAmount = (vTokenAmount * tokenPool) / vTokenTotalSupply;
+        }
     }
 
     function getTotalETH() public view returns (uint256) {
