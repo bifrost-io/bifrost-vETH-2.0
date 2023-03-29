@@ -52,6 +52,12 @@ contract SLPDeposit is OwnableUpgradeable {
     // withdrawal_credentials with prefix 0x01
     bytes public withdrawalCredentials;
 
+    /* ========== EVENTS ========== */
+
+    event MerkleRootSet(address indexed sender, uint256 indexed batchId, bytes32 merkleRoot);
+    event SLPCoreSet(address indexed sender, address slpCore);
+    event WithdrawalCredentialsSet(address indexed sender, bytes withdrawalCredentials);
+
     function initialize(address _depositContract) public initializer {
         require(_depositContract != address(0), "Invalid deposit contract");
         super.__Ownable_init();
@@ -105,16 +111,19 @@ contract SLPDeposit is OwnableUpgradeable {
         require(merkleRoots[batchId] == bytes32(0), "Merkle root exists");
         require(merkleRoot != bytes32(0), "Invalid merkle root");
         merkleRoots[batchId] = merkleRoot;
+        emit MerkleRootSet(msg.sender, batchId, merkleRoot);
     }
 
     function setCredential(address receiver) external onlyOwner {
         require(receiver != address(0), "Invalid receiver");
         withdrawalCredentials = abi.encodePacked(bytes12(0x010000000000000000000000), receiver);
+        emit WithdrawalCredentialsSet(msg.sender, withdrawalCredentials);
     }
 
     function setSLPCore(address _slpCore) external onlyOwner {
         require(_slpCore != address(0), "Invalid SLP core address");
         slpCore = _slpCore;
+        emit SLPCoreSet(msg.sender, slpCore);
     }
 
     function _sendValue(address payable recipient, uint256 amount) private {

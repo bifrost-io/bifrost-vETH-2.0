@@ -40,6 +40,9 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     event WithdrawalCompleted(address indexed sender, uint256 tokenAmount);
     event WithdrawalDeposited(address indexed sender, uint256 tokenAmount);
 
+    event FeeRateSet(address indexed sender, uint256 feeRate);
+    event FeeReceiverSet(address indexed sender, address feeReceiver);
+
     /* ========== CONSTANTS ========== */
 
     address public constant DEAD_ADDRESS = 0x000000000000000000000000000000000000dEaD;
@@ -190,11 +193,13 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
     function _setFeeRate(uint256 _feeRate) private {
         require(_feeRate <= FEE_RATE_DENOMINATOR, "Fee rate exceeds range");
         feeRate = _feeRate;
+        emit FeeRateSet(msg.sender, _feeRate);
     }
 
     function _setFeeReceiver(address _feeReceiver) private {
         require(_feeReceiver != address(0), "Invalid fee receiver address");
         feeReceiver = _feeReceiver;
+        emit FeeReceiverSet(msg.sender, _feeReceiver);
     }
 
     function _sendValue(address payable recipient, uint256 amount) private {

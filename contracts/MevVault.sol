@@ -17,6 +17,8 @@ contract MevVault is OwnableUpgradeable {
 
     event RewardReceived(address indexed sender, uint256 amount);
     event RewardAdded(address indexed sender, address receiver, uint256 amount);
+    event SLPCoreSet(address indexed sender, address slpCore);
+    event OperatorSet(address indexed sender, address operator);
 
     /* ========== CONSTANTS ========== */
 
@@ -77,11 +79,13 @@ contract MevVault is OwnableUpgradeable {
     function setSLPCore(address _slpCore) external onlyOwner {
         require(_slpCore != address(0), "Invalid SLP core address");
         slpCore = ISLPCore(_slpCore);
+        emit SLPCoreSet(msg.sender, _slpCore);
     }
 
     function setOperator(address _operator) external onlyOwner {
         require(_operator != address(0), "Invalid operator address");
         operator = _operator;
+        emit OperatorSet(msg.sender, _operator);
     }
 
     receive() external payable {

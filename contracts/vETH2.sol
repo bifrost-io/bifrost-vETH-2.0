@@ -11,6 +11,9 @@ contract vETH2 is ERC20Pausable, Ownable {
 
     address public slpCore;
 
+    /* ========== EVENTS ========== */
+    event SLPCoreSet(address indexed sender, address slpCore);
+
     // solhint-disable-next-line no-empty-blocks
     constructor() ERC20("Voucher Ethereum 2.0", "vETH") Pausable() Ownable() {}
 
@@ -35,6 +38,7 @@ contract vETH2 is ERC20Pausable, Ownable {
     function setSLPCore(address _slpCore) external onlyOwner {
         require(_slpCore != address(0), "Invalid SLP core address");
         slpCore = _slpCore;
+        emit SLPCoreSet(msg.sender, _slpCore);
     }
 
     /* ========== MODIFIER ========== */
