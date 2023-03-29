@@ -24,6 +24,9 @@ contract WithdrawalVault is OwnableUpgradeable {
     event RewardAdded(address indexed sender, uint256 amount);
     event RewardRemoved(address indexed sender, uint256 amount);
     event WithdrawalNodeIncreased(address indexed sender, uint256 number);
+    event SLPCoreSet(address indexed sender, address slpCore);
+    event OperatorSet(address indexed sender, address operator);
+    event RewardNumeratorSet(address indexed sender, uint256 rewardNumerator);
 
     /* ========== CONSTANTS ========== */
 
@@ -89,16 +92,19 @@ contract WithdrawalVault is OwnableUpgradeable {
     function setSLPCore(address _slpCore) external onlyOwner {
         require(_slpCore != address(0), "Invalid SLP core address");
         slpCore = ISLPCore(_slpCore);
+        emit SLPCoreSet(msg.sender, _slpCore);
     }
 
     function setOperator(address _operator) external onlyOwner {
         require(_operator != address(0), "Invalid operator address");
         operator = _operator;
+        emit OperatorSet(msg.sender, _operator);
     }
 
     function setRewardNumerator(uint256 _rewardNumerator) external onlyOwner {
         require(_rewardNumerator <= REWARD_DENOMINATOR, "Reward numerator too large");
         rewardNumerator = _rewardNumerator;
+        emit RewardNumeratorSet(msg.sender, _rewardNumerator);
     }
 
     /* ========== VIEWS ========== */
