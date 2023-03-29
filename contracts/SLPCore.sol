@@ -214,12 +214,20 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function calculateVTokenAmount(uint256 tokenAmount) public view returns (uint256 vTokenAmount) {
         uint256 vTokenTotalSupply = IERC20Upgradeable(vETH2).totalSupply();
-        vTokenAmount = (tokenAmount * vTokenTotalSupply) / tokenPool;
+        if (vTokenTotalSupply == 0 && tokenPool == 0) {
+            vTokenAmount = tokenAmount;
+        } else {
+            vTokenAmount = (tokenAmount * vTokenTotalSupply) / tokenPool;
+        }
     }
 
     function calculateTokenAmount(uint256 vTokenAmount) public view returns (uint256 tokenAmount) {
         uint256 vTokenTotalSupply = IERC20Upgradeable(vETH2).totalSupply();
-        tokenAmount = (vTokenAmount * tokenPool) / vTokenTotalSupply;
+        if (vTokenTotalSupply == 0 && tokenPool == 0) {
+            tokenAmount = vTokenAmount;
+        } else {
+            tokenAmount = (vTokenAmount * tokenPool) / vTokenTotalSupply;
+        }
     }
 
     function getTotalETH() public view returns (uint256) {
