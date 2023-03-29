@@ -40,6 +40,7 @@ contract SLPDeposit is OwnableUpgradeable {
     // solhint-disable-next-line max-line-length
     // Refer to https://github.com/lidofinance/lido-dao/blob/14503a5a9c7c46864704bb3561e22ae2f84a04ff/contracts/0.8.9/BeaconChainDepositor.sol#L27
     uint64 public constant DEPOSIT_SIZE_IN_GWEI_LE64 = 0x0040597307000000;
+    uint256 public constant MAX_VALIDATORS_PER_DEPOSIT = 50;
 
     /* ========== STATE VARIABLES ========== */
 
@@ -78,6 +79,7 @@ contract SLPDeposit is OwnableUpgradeable {
         bool[] memory proofFlags,
         Validator[] memory validators
     ) external onlyOwner {
+        require(validators.length <= MAX_VALIDATORS_PER_DEPOSIT, "Too many validators");
         bytes32 root = merkleRoots[batchId];
         require(root != bytes32(0), "Merkle root not exists");
 
@@ -96,6 +98,7 @@ contract SLPDeposit is OwnableUpgradeable {
     }
 
     function batchDeposit(Validator[] calldata validators) external onlyOwner {
+        require(validators.length <= MAX_VALIDATORS_PER_DEPOSIT, "Too many validators");
         require(withdrawalCredentials[0] == 0x01, "Wrong credential prefix");
         for (uint256 i = 0; i < validators.length; i++) {
             require(checkDepositDataRoot(validators[i]), "Invalid deposit data");
