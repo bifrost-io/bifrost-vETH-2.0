@@ -36,7 +36,7 @@ const deployFunction: DeployFunction = async function ({
 
   const vETH2Contract = await ethers.getContractAt('vETH2', (await deployments.get('vETH2')).address)
   if ((await vETH2Contract.totalSupply()).isZero()) {
-    const tx = await vETH2Contract.mint(address, ethers.utils.parseEther('1'))
+    const tx = await vETH2Contract.mint(address, ethers.utils.parseEther('1948.605992350544570518'))
     console.log('\x1b[32m%s\x1b[0m', `Call vETH2.mint: ${tx.hash}`)
   }
 }

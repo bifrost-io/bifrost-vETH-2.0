@@ -16,7 +16,7 @@ const deployFunction: DeployFunction = async function ({
   const SLPDeposit = (await deployments.get('SLPDeposit')).address
   const chainId = network.config.chainId as CHAIN_ID
   const operator = OPERATOR_ADDRESS[chainId]
-  const rewardNumerator = ethers.utils.parseEther('0.00013')
+  const rewardNumerator = ethers.utils.parseEther('0.00137')
 
   const { address } = await deploy('WithdrawalVault', {
     from: deployer,
