@@ -20,8 +20,8 @@ const deployFunction: DeployFunction = async function ({
   const MevVault = (await deployments.get('MevVault')).address
   const WithdrawalVault = (await deployments.get('WithdrawalVault')).address
   const feeReceiver = SLP_FEE_RECEIVER_ADDRESS[chainId]
-  // fee rate: 5%
-  const feeRate = ethers.utils.parseEther('0.05')
+  // fee rate: 10%
+  const feeRate = ethers.utils.parseEther('0.1')
 
   const { address } = await deploy('SLPCore', {
     from: deployer,
