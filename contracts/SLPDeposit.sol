@@ -52,6 +52,8 @@ contract SLPDeposit is OwnableUpgradeable {
     address public slpCore;
     // withdrawal_credentials with prefix 0x01
     bytes public withdrawalCredentials;
+    // WithdrawVault address
+    address public withdrawVault;
 
     /* ========== EVENTS ========== */
 
@@ -106,7 +108,7 @@ contract SLPDeposit is OwnableUpgradeable {
         }
     }
 
-    function withdrawETH(address recipient, uint256 amount) external onlySLPCore {
+    function withdrawETH(address recipient, uint256 amount) external onlySLPCoreOrWithdrawVault {
         _sendValue(payable(recipient), amount);
     }
 
@@ -127,6 +129,11 @@ contract SLPDeposit is OwnableUpgradeable {
         require(_slpCore != address(0), "Invalid SLP core address");
         slpCore = _slpCore;
         emit SLPCoreSet(msg.sender, slpCore);
+    }
+
+    function setWithdrawVault(address _withdrawVault) external onlyOwner {
+        require(_withdrawVault != address(0), "Invalid withdraw vault address");
+        withdrawVault = _withdrawVault;
     }
 
     function _sendValue(address payable recipient, uint256 amount) private {
@@ -171,8 +178,8 @@ contract SLPDeposit is OwnableUpgradeable {
         return Validator(pubkey, withdrawalCredentials, signature, deposit_data_root);
     }
 
-    modifier onlySLPCore() {
-        require(msg.sender == slpCore, "Invalid SLP core address");
+    modifier onlySLPCoreOrWithdrawVault() {
+        require(msg.sender == slpCore || msg.sender == withdrawVault, "Invalid sender");
         _;
     }
 }

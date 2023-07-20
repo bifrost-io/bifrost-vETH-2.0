@@ -12,20 +12,23 @@ describe('SLPDeposit', function () {
   let deployer: SignerWithAddress
   let newOwner: SignerWithAddress
   let attacker: SignerWithAddress
+  let mockWithdrawVault: SignerWithAddress
   const batchId = 0
 
   beforeEach(async function () {
-    ;[deployer, newOwner, attacker] = await ethers.getSigners()
+    ;[deployer, newOwner, attacker, mockWithdrawVault] = await ethers.getSigners()
 
     const DepositContract = await ethers.getContractFactory('DepositContract')
     const SLPDeposit = await ethers.getContractFactory('SLPDeposit')
     slpDeposit = await SLPDeposit.deploy()
     depositContract = await DepositContract.deploy()
     await slpDeposit.initialize(depositContract.address)
+    await slpDeposit.setWithdrawVault(mockWithdrawVault.address)
   })
 
   it('basic check', async function () {
     expect(await slpDeposit.depositContract()).to.equal(depositContract.address)
+    expect(await slpDeposit.withdrawVault()).to.equal(mockWithdrawVault.address)
   })
 
   it('transfer owner should be ok', async function () {

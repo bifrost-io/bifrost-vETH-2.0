@@ -16,6 +16,8 @@ interface ISLPCore {
 
 interface ISLPDeposit {
     function depositETH() external payable;
+
+    function withdrawETH(address recipient, uint256 amount) external;
 }
 
 contract WithdrawalVault is OwnableUpgradeable {
@@ -24,6 +26,7 @@ contract WithdrawalVault is OwnableUpgradeable {
     event RewardAdded(address indexed sender, uint256 amount);
     event RewardRemoved(address indexed sender, uint256 amount);
     event WithdrawalNodeIncreased(address indexed sender, uint256 number);
+    event FlashWithdrawalNodeIncreased(address indexed sender, uint256 number);
     event SLPCoreSet(address indexed sender, address slpCore);
     event OperatorSet(address indexed sender, address operator);
     event RewardNumeratorSet(address indexed sender, uint256 rewardNumerator);
@@ -43,6 +46,8 @@ contract WithdrawalVault is OwnableUpgradeable {
     uint256 public rewardNumerator;
 
     mapping(uint256 => bool) public rewardDays;
+
+    uint256 public flashWithdrawalNodeNumber;
 
     function initialize(address _slpDeposit, address _operator, uint256 _rewardNumerator) public initializer {
         require(_slpDeposit != address(0), "Invalid SLP deposit address");
@@ -65,6 +70,19 @@ contract WithdrawalVault is OwnableUpgradeable {
         slpCore.depositWithdrawal{value: withdrawalAmount}();
 
         emit WithdrawalNodeIncreased(msg.sender, n);
+    }
+
+    function flashWithdrawalNode(uint256 n) external onlyOperator {
+        uint256 withdrawalAmount = n * DEPOSIT_SIZE;
+        require(withdrawalAmount <= address(slpDeposit).balance, "Not enough ETH");
+
+        slpDeposit.withdrawETH(address(this), withdrawalAmount);
+        withdrawalNodeNumber += n;
+        flashWithdrawalNodeNumber += n;
+        slpCore.depositWithdrawal{value: withdrawalAmount}();
+
+        emit WithdrawalNodeIncreased(msg.sender, n);
+        emit FlashWithdrawalNodeIncreased(msg.sender, n);
     }
 
     function addReward(uint256 _rewardAmount) external onlyOperator checkReward(_rewardAmount) {

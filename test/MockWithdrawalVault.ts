@@ -57,6 +57,7 @@ describe('MockWithdrawalVault', function () {
     await vETH2.setSLPCore(slpCore.address)
     await mevVault.setSLPCore(slpCore.address)
     await mockWithdrawalVault.setSLPCore(slpCore.address)
+    await slpDeposit.setWithdrawVault(mockWithdrawalVault.address)
   })
 
   it('basic check', async function () {
@@ -80,18 +81,18 @@ describe('MockWithdrawalVault', function () {
 
   describe('withdrawal', function () {
     beforeEach(async function () {
-      const amount = ethers.utils.parseEther('1')
+      const amount = ethers.utils.parseEther('32')
       await expect(slpCore.connect(user1).mint({ value: amount }))
         .to.emit(slpCore, 'Deposited')
         .withArgs(user1.address, amount, amount)
       expect(await vETH2.balanceOf(user1.address)).to.equal(amount)
-      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('1'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('32'))
 
       await expect(slpCore.connect(user2).mint({ value: amount }))
         .to.emit(slpCore, 'Deposited')
         .withArgs(user2.address, amount, amount)
       expect(await vETH2.balanceOf(user2.address)).to.equal(amount)
-      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('2'))
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('64'))
     })
 
     it('increaseWithdrawalNode should be ok', async function () {
@@ -122,6 +123,22 @@ describe('MockWithdrawalVault', function () {
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(11)
     })
 
+    it('flashIncreaseWithdrawalNode should be ok', async function () {
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(0)
+      expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
+      expect(await mockWithdrawalVault.flashWithdrawalNodeNumber()).to.equal(0)
+      await expect(mockWithdrawalVault.connect(operator).flashWithdrawalNode(1))
+        .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
+        .withArgs(operator.address, 1)
+        .to.emit(mockWithdrawalVault, 'FlashWithdrawalNodeIncreased')
+        .withArgs(operator.address, 1)
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(ethers.utils.parseEther('32'))
+      expect(await ethers.provider.getBalance(mockWithdrawalVault.address)).to.equal(0)
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('32'))
+      expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(1)
+      expect(await mockWithdrawalVault.flashWithdrawalNodeNumber()).to.equal(1)
+    })
+
     it('increaseWithdrawalNode exceed total ETH should revert', async function () {
       await deployer.sendTransaction({
         to: mockWithdrawalVault.address,
@@ -138,6 +155,15 @@ describe('MockWithdrawalVault', function () {
         .withArgs(operator.address, 10)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(10)
       await expect(mockWithdrawalVault.connect(operator).increaseWithdrawalNode(1)).to.revertedWith('Not enough ETH')
+    })
+
+    it('flashIncreaseWithdrawalNode exceed total ETH should revert', async function () {
+      await expect(mockWithdrawalVault.connect(operator).flashWithdrawalNode(2))
+        .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
+        .withArgs(operator.address, 2)
+        .to.emit(mockWithdrawalVault, 'FlashWithdrawalNodeIncreased')
+        .withArgs(operator.address, 2)
+      await expect(mockWithdrawalVault.connect(operator).flashWithdrawalNode(1)).to.revertedWith('Not enough ETH')
     })
   })
 
