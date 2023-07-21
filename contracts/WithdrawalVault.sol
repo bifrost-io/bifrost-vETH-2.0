@@ -30,6 +30,7 @@ contract WithdrawalVault is OwnableUpgradeable {
     event SLPCoreSet(address indexed sender, address slpCore);
     event OperatorSet(address indexed sender, address operator);
     event RewardNumeratorSet(address indexed sender, uint256 rewardNumerator);
+    event EthDeposited(address indexed sender, uint256 tokenAmount);
 
     /* ========== CONSTANTS ========== */
 
@@ -125,6 +126,10 @@ contract WithdrawalVault is OwnableUpgradeable {
         emit RewardNumeratorSet(msg.sender, _rewardNumerator);
     }
 
+    function depositETH() external payable onlySlpDeposit {
+        emit EthDeposited(msg.sender, msg.value);
+    }
+
     /* ========== VIEWS ========== */
 
     function getTodayTimestamp() public view returns (uint256) {
@@ -135,6 +140,11 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     modifier onlyOperator() {
         require(msg.sender == operator, "Caller is not operator");
+        _;
+    }
+
+    modifier onlySlpDeposit() {
+        require(msg.sender == address(slpDeposit), "Caller is not slpDeposit");
         _;
     }
 

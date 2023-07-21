@@ -124,6 +124,7 @@ describe('MockWithdrawalVault', function () {
     })
 
     it('flashIncreaseWithdrawalNode should be ok', async function () {
+      await mockWithdrawalVault.setETHReceive(false)
       expect(await ethers.provider.getBalance(slpCore.address)).to.equal(0)
       expect(await mockWithdrawalVault.withdrawalNodeNumber()).to.equal(0)
       expect(await mockWithdrawalVault.flashWithdrawalNodeNumber()).to.equal(0)
@@ -158,11 +159,15 @@ describe('MockWithdrawalVault', function () {
     })
 
     it('flashIncreaseWithdrawalNode exceed total ETH should revert', async function () {
+      await mockWithdrawalVault.setETHReceive(false)
       await expect(mockWithdrawalVault.connect(operator).flashWithdrawalNode(2))
         .to.emit(mockWithdrawalVault, 'WithdrawalNodeIncreased')
         .withArgs(operator.address, 2)
         .to.emit(mockWithdrawalVault, 'FlashWithdrawalNodeIncreased')
         .withArgs(operator.address, 2)
+      expect(await ethers.provider.getBalance(slpDeposit.address)).to.equal(0)
+      expect(await ethers.provider.getBalance(mockWithdrawalVault.address)).to.equal(0)
+      expect(await ethers.provider.getBalance(slpCore.address)).to.equal(ethers.utils.parseEther('64'))
       await expect(mockWithdrawalVault.connect(operator).flashWithdrawalNode(1)).to.revertedWith('Not enough ETH')
     })
   })

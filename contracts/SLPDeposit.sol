@@ -22,6 +22,10 @@ interface IDepositContract {
     ) external payable;
 }
 
+interface IETHDepositor {
+    function depositETH() external payable;
+}
+
 contract SLPDeposit is OwnableUpgradeable {
     struct Validator {
         bytes pubkey;
@@ -109,7 +113,7 @@ contract SLPDeposit is OwnableUpgradeable {
     }
 
     function withdrawETH(address recipient, uint256 amount) external onlySLPCoreOrWithdrawVault {
-        _sendValue(payable(recipient), amount);
+        IETHDepositor(recipient).depositETH{value: amount}();
     }
 
     function setMerkleRoot(uint256 batchId, bytes32 merkleRoot) external onlyOwner {
@@ -134,13 +138,6 @@ contract SLPDeposit is OwnableUpgradeable {
     function setWithdrawVault(address _withdrawVault) external onlyOwner {
         require(_withdrawVault != address(0), "Invalid withdraw vault address");
         withdrawVault = _withdrawVault;
-    }
-
-    function _sendValue(address payable recipient, uint256 amount) private {
-        require(address(this).balance >= amount, "Insufficient balance");
-
-        (bool success, ) = recipient.call{value: amount}("");
-        require(success, "Unable to send value");
     }
 
     function innerDeposit(Validator memory validator) private {

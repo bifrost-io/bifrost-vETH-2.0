@@ -5,6 +5,14 @@ pragma solidity ^0.8.0;
 import {WithdrawalVault} from "../WithdrawalVault.sol";
 
 contract MockWithdrawalVault is WithdrawalVault {
+    bool public enableReceiveETH = true;
+
     // solhint-disable-next-line no-empty-blocks
-    receive() external payable {}
+    receive() external payable {
+        require(enableReceiveETH);
+    }
+
+    function setETHReceive(bool enable) external onlyOwner {
+        enableReceiveETH = enable;
+    }
 }
