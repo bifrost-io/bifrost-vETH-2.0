@@ -1,5 +1,5 @@
 {
-  "address": "0xed8e7639040d0f81a4AFDc2b805aa325050EEB32",
+  "address": "0xcc8Ea2508749E0ad061fF9dfd2017E939E664b99",
   "abi": [
     {
       "anonymous": false,
@@ -443,6 +443,19 @@
       "type": "function"
     },
     {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_withdrawVault",
+          "type": "address"
+        }
+      ],
+      "name": "setWithdrawVault",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
       "inputs": [],
       "name": "slpCore",
       "outputs": [
@@ -484,6 +497,19 @@
       "name": "withdrawETH",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "withdrawVault",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
