@@ -4,8 +4,7 @@
 pragma solidity ^0.8.0;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-// solhint-disable-next-line max-line-length
-import {MerkleProofUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
+import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 
 interface IDepositContract {
     /// @notice Submit a Phase 0 DepositData object.
@@ -104,7 +103,7 @@ contract SLPDeposit is OwnableUpgradeable {
 
     // address of Ethereum 2.0 Deposit Contract
     IDepositContract public depositContract;
-    // batch id => merkle root of withdrawal_credentials
+    // @deprecated batch id => merkle root of withdrawal_credentials
     mapping(uint256 => bytes32) public merkleRoots;
     // SLP core address
     address public slpCore;
@@ -112,10 +111,13 @@ contract SLPDeposit is OwnableUpgradeable {
     bytes public withdrawalCredentials;
     // WithdrawVault address
     address public withdrawVault;
+    // SSVNetwork address
+    address public ssvNetwork;
+    // SSVToken address
+    address public ssvToken;
 
     /* ========== EVENTS ========== */
 
-    event MerkleRootSet(address indexed sender, uint256 indexed batchId, bytes32 merkleRoot);
     event SLPCoreSet(address indexed sender, address slpCore);
     event WithdrawalCredentialsSet(address indexed sender, bytes withdrawalCredentials);
 
@@ -133,28 +135,56 @@ contract SLPDeposit is OwnableUpgradeable {
         emit EthDeposited(msg.sender, msg.value);
     }
 
-    function batchDepositWithProof(
-        uint256 batchId,
-        bytes32[] memory proof,
-        bool[] memory proofFlags,
-        Validator[] memory validators
+    function depositSSV(
+        Validator calldata validator,
+        uint64[] memory operatorIds,
+        bytes calldata sharesData,
+        uint256 amount,
+        ISSVClusters.Cluster memory cluster
     ) external onlyOwner {
-        require(validators.length <= MAX_VALIDATORS_PER_DEPOSIT, "Too many validators");
-        bytes32 root = merkleRoots[batchId];
-        require(root != bytes32(0), "Merkle root not exists");
+        require(withdrawalCredentials[0] == 0x01, "Wrong credential prefix");
+        require(checkDepositDataRoot(validator), "Invalid deposit data");
+        innerDepositSSV(validator, operatorIds, sharesData, amount, cluster);
+    }
 
-        bytes32[] memory leaves = new bytes32[](validators.length);
-        for (uint256 i = 0; i < validators.length; i++) {
-            leaves[i] = keccak256(validators[i].withdrawal_credentials);
-        }
-        require(
-            MerkleProofUpgradeable.multiProofVerify(proof, proofFlags, root, leaves),
-            "Merkle proof verification failed"
-        );
+    function registerValidatorSSV(
+        bytes calldata publicKey,
+        uint64[] memory operatorIds,
+        bytes calldata sharesData,
+        uint256 amount,
+        ISSVClusters.Cluster memory cluster
+    ) external onlyOwner {
+        IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+        ISSVClusters(ssvNetwork).registerValidator(publicKey, operatorIds, sharesData, amount, cluster);
+    }
 
-        for (uint256 i = 0; i < validators.length; i++) {
-            innerDeposit(validators[i]);
-        }
+    function removeValidatorSSV(
+        bytes calldata publicKey,
+        uint64[] memory operatorIds,
+        ISSVClusters.Cluster memory cluster
+    ) external onlyOwner {
+        ISSVClusters(ssvNetwork).removeValidator(publicKey, operatorIds, cluster);
+    }
+
+    function liquidateSSV(uint64[] memory operatorIds, ISSVClusters.Cluster memory cluster) external onlyOwner {
+        ISSVClusters(ssvNetwork).liquidate(address(this), operatorIds, cluster);
+    }
+
+    function reactivateSSV(
+        uint64[] memory operatorIds,
+        uint256 amount,
+        ISSVClusters.Cluster memory cluster
+    ) external onlyOwner {
+        IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+        ISSVClusters(ssvNetwork).reactivate(operatorIds, amount, cluster);
+    }
+
+    function withdrawSSV(
+        uint64[] memory operatorIds,
+        uint256 tokenAmount,
+        ISSVClusters.Cluster memory cluster
+    ) external onlyOwner {
+        ISSVClusters(ssvNetwork).withdraw(operatorIds, tokenAmount, cluster);
     }
 
     function batchDeposit(Validator[] calldata validators) external onlyOwner {
@@ -168,13 +198,6 @@ contract SLPDeposit is OwnableUpgradeable {
 
     function withdrawETH(address recipient, uint256 amount) external onlySLPCoreOrWithdrawVault {
         IETHDepositor(recipient).depositETH{value: amount}();
-    }
-
-    function setMerkleRoot(uint256 batchId, bytes32 merkleRoot) external onlyOwner {
-        require(merkleRoots[batchId] == bytes32(0), "Merkle root exists");
-        require(merkleRoot != bytes32(0), "Invalid merkle root");
-        merkleRoots[batchId] = merkleRoot;
-        emit MerkleRootSet(msg.sender, batchId, merkleRoot);
     }
 
     function setCredential(address receiver) external onlyOwner {
@@ -194,6 +217,16 @@ contract SLPDeposit is OwnableUpgradeable {
         withdrawVault = _withdrawVault;
     }
 
+    function setSSVNetwork(address _ssvNetwork) external onlyOwner {
+        require(_ssvNetwork != address(0), "Invalid SSV network address");
+        ssvNetwork = _ssvNetwork;
+    }
+
+    function setSSVToken(address _ssvToken) external onlyOwner {
+        require(_ssvToken != address(0), "Invalid SSV token address");
+        ssvToken = _ssvToken;
+    }
+
     function innerDeposit(Validator memory validator) private {
         require(address(this).balance >= DEPOSIT_SIZE, "Insufficient balance");
         depositContract.deposit{value: DEPOSIT_SIZE}(
@@ -202,6 +235,18 @@ contract SLPDeposit is OwnableUpgradeable {
             validator.signature,
             validator.deposit_data_root
         );
+    }
+
+    function innerDepositSSV(
+        Validator calldata validator,
+        uint64[] memory operatorIds,
+        bytes calldata sharesData,
+        uint256 amount,
+        ISSVClusters.Cluster memory cluster
+    ) private {
+        innerDeposit(validator);
+        IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+        ISSVClusters(ssvNetwork).registerValidator(validator.pubkey, operatorIds, sharesData, amount, cluster);
     }
 
     /* ========== VIEWS ========== */
