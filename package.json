@@ -45,6 +45,8 @@
     "solhint": "^3.4.1",
     "solhint-plugin-prettier": "^0.0.5",
     "solidity-coverage": "^0.8.2",
+    "ssv-keys": "https://github.com/bloxapp/ssv-keys.git",
+    "ssv-scanner": "https://github.com/bloxapp/ssv-scanner.git",
     "ts-node": "^10.9.1",
     "typechain": "^8.1.1",
     "typescript": "^5.0.3"
