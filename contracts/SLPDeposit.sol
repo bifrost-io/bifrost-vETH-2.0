@@ -144,7 +144,13 @@ contract SLPDeposit is OwnableUpgradeable {
     ) external onlyOwner {
         require(withdrawalCredentials[0] == 0x01, "Wrong credential prefix");
         require(checkDepositDataRoot(validator), "Invalid deposit data");
-        innerDepositSSV(validator, operatorIds, sharesData, amount, cluster);
+
+        innerDeposit(validator);
+        if (amount > 0) {
+            IERC20Upgradeable(ssvToken).transferFrom(msg.sender, address(this), amount);
+            IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+        }
+        ISSVClusters(ssvNetwork).registerValidator(validator.pubkey, operatorIds, sharesData, amount, cluster);
     }
 
     function registerValidatorSSV(
@@ -154,7 +160,10 @@ contract SLPDeposit is OwnableUpgradeable {
         uint256 amount,
         ISSVClusters.Cluster memory cluster
     ) external onlyOwner {
-        IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+        if (amount > 0) {
+            IERC20Upgradeable(ssvToken).transferFrom(msg.sender, address(this), amount);
+            IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+        }
         ISSVClusters(ssvNetwork).registerValidator(publicKey, operatorIds, sharesData, amount, cluster);
     }
 
@@ -181,10 +190,12 @@ contract SLPDeposit is OwnableUpgradeable {
 
     function withdrawSSV(
         uint64[] memory operatorIds,
-        uint256 tokenAmount,
-        ISSVClusters.Cluster memory cluster
+        ISSVClusters.Cluster memory cluster,
+        address to,
+        uint256 tokenAmount
     ) external onlyOwner {
         ISSVClusters(ssvNetwork).withdraw(operatorIds, tokenAmount, cluster);
+        IERC20Upgradeable(ssvToken).transfer(to, tokenAmount);
     }
 
     function batchDeposit(Validator[] calldata validators) external onlyOwner {
@@ -235,18 +246,6 @@ contract SLPDeposit is OwnableUpgradeable {
             validator.signature,
             validator.deposit_data_root
         );
-    }
-
-    function innerDepositSSV(
-        Validator calldata validator,
-        uint64[] memory operatorIds,
-        bytes calldata sharesData,
-        uint256 amount,
-        ISSVClusters.Cluster memory cluster
-    ) private {
-        innerDeposit(validator);
-        IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
-        ISSVClusters(ssvNetwork).registerValidator(validator.pubkey, operatorIds, sharesData, amount, cluster);
     }
 
     /* ========== VIEWS ========== */
