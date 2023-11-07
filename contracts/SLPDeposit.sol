@@ -114,7 +114,7 @@ contract SLPDeposit is OwnableUpgradeable {
     // SSVNetwork address
     address public ssvNetwork;
     // SSVToken address
-    address public ssvToken;
+    IERC20Upgradeable public ssvToken;
 
     /* ========== EVENTS ========== */
 
@@ -147,8 +147,8 @@ contract SLPDeposit is OwnableUpgradeable {
 
         innerDeposit(validator);
         if (amount > 0) {
-            IERC20Upgradeable(ssvToken).transferFrom(msg.sender, address(this), amount);
-            IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+            ssvToken.transferFrom(msg.sender, address(this), amount);
+            ssvToken.approve(ssvNetwork, amount);
         }
         ISSVClusters(ssvNetwork).registerValidator(validator.pubkey, operatorIds, sharesData, amount, cluster);
     }
@@ -161,8 +161,8 @@ contract SLPDeposit is OwnableUpgradeable {
         ISSVClusters.Cluster memory cluster
     ) external onlyOwner {
         if (amount > 0) {
-            IERC20Upgradeable(ssvToken).transferFrom(msg.sender, address(this), amount);
-            IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+            ssvToken.transferFrom(msg.sender, address(this), amount);
+            ssvToken.approve(ssvNetwork, amount);
         }
         ISSVClusters(ssvNetwork).registerValidator(publicKey, operatorIds, sharesData, amount, cluster);
     }
@@ -175,8 +175,16 @@ contract SLPDeposit is OwnableUpgradeable {
         ISSVClusters(ssvNetwork).removeValidator(publicKey, operatorIds, cluster);
     }
 
-    function liquidateSSV(uint64[] memory operatorIds, ISSVClusters.Cluster memory cluster) external onlyOwner {
+    function liquidateSSV(
+        uint64[] memory operatorIds,
+        ISSVClusters.Cluster memory cluster,
+        address to
+    ) external onlyOwner {
         ISSVClusters(ssvNetwork).liquidate(address(this), operatorIds, cluster);
+        uint256 amount = ssvToken.balanceOf(address(this));
+        if (amount > 0) {
+            ssvToken.transfer(to, amount);
+        }
     }
 
     function reactivateSSV(
@@ -184,7 +192,10 @@ contract SLPDeposit is OwnableUpgradeable {
         uint256 amount,
         ISSVClusters.Cluster memory cluster
     ) external onlyOwner {
-        IERC20Upgradeable(ssvToken).approve(ssvNetwork, amount);
+        if (amount > 0) {
+            ssvToken.transferFrom(msg.sender, address(this), amount);
+            ssvToken.approve(ssvNetwork, amount);
+        }
         ISSVClusters(ssvNetwork).reactivate(operatorIds, amount, cluster);
     }
 
@@ -195,7 +206,7 @@ contract SLPDeposit is OwnableUpgradeable {
         uint256 tokenAmount
     ) external onlyOwner {
         ISSVClusters(ssvNetwork).withdraw(operatorIds, tokenAmount, cluster);
-        IERC20Upgradeable(ssvToken).transfer(to, tokenAmount);
+        ssvToken.transfer(to, tokenAmount);
     }
 
     function batchDeposit(Validator[] calldata validators) external onlyOwner {
@@ -235,7 +246,7 @@ contract SLPDeposit is OwnableUpgradeable {
 
     function setSSVToken(address _ssvToken) external onlyOwner {
         require(_ssvToken != address(0), "Invalid SSV token address");
-        ssvToken = _ssvToken;
+        ssvToken = IERC20Upgradeable(_ssvToken);
     }
 
     function innerDeposit(Validator memory validator) private {
