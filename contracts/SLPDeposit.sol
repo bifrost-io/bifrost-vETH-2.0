@@ -115,6 +115,8 @@ contract SLPDeposit is OwnableUpgradeable {
     address public ssvNetwork;
     // SSVToken address
     IERC20Upgradeable public ssvToken;
+    // operator => isOperator
+    mapping(address => bool) public operators;
 
     /* ========== EVENTS ========== */
 
@@ -159,7 +161,7 @@ contract SLPDeposit is OwnableUpgradeable {
         bytes calldata sharesData,
         uint256 amount,
         ISSVClusters.Cluster memory cluster
-    ) external onlyOwner {
+    ) external onlyOperator {
         if (amount > 0) {
             ssvToken.transferFrom(msg.sender, address(this), amount);
             ssvToken.approve(ssvNetwork, amount);
@@ -171,7 +173,7 @@ contract SLPDeposit is OwnableUpgradeable {
         bytes calldata publicKey,
         uint64[] memory operatorIds,
         ISSVClusters.Cluster memory cluster
-    ) external onlyOwner {
+    ) external onlyOperator {
         ISSVClusters(ssvNetwork).removeValidator(publicKey, operatorIds, cluster);
     }
 
@@ -179,7 +181,7 @@ contract SLPDeposit is OwnableUpgradeable {
         uint64[] memory operatorIds,
         ISSVClusters.Cluster memory cluster,
         address to
-    ) external onlyOwner {
+    ) external onlyOperator {
         ISSVClusters(ssvNetwork).liquidate(address(this), operatorIds, cluster);
         uint256 amount = ssvToken.balanceOf(address(this));
         if (amount > 0) {
@@ -191,7 +193,7 @@ contract SLPDeposit is OwnableUpgradeable {
         uint64[] memory operatorIds,
         uint256 amount,
         ISSVClusters.Cluster memory cluster
-    ) external onlyOwner {
+    ) external onlyOperator {
         if (amount > 0) {
             ssvToken.transferFrom(msg.sender, address(this), amount);
             ssvToken.approve(ssvNetwork, amount);
@@ -204,7 +206,7 @@ contract SLPDeposit is OwnableUpgradeable {
         ISSVClusters.Cluster memory cluster,
         address to,
         uint256 tokenAmount
-    ) external onlyOwner {
+    ) external onlyOperator {
         ISSVClusters(ssvNetwork).withdraw(operatorIds, tokenAmount, cluster);
         ssvToken.transfer(to, tokenAmount);
     }
@@ -239,14 +241,21 @@ contract SLPDeposit is OwnableUpgradeable {
         withdrawVault = _withdrawVault;
     }
 
-    function setSSVNetwork(address _ssvNetwork) external onlyOwner {
+    function setSSVConfig(address _ssvNetwork, address _ssvToken) external onlyOwner {
         require(_ssvNetwork != address(0), "Invalid SSV network address");
+        require(_ssvToken != address(0), "Invalid SSV token address");
+        ssvToken = IERC20Upgradeable(_ssvToken);
         ssvNetwork = _ssvNetwork;
     }
 
-    function setSSVToken(address _ssvToken) external onlyOwner {
-        require(_ssvToken != address(0), "Invalid SSV token address");
-        ssvToken = IERC20Upgradeable(_ssvToken);
+    function addOperator(address _operator) external onlyOwner {
+        require(_operator != address(0) && !operators[_operator], "Invalid operator");
+        operators[_operator] = true;
+    }
+
+    function removeOperator(address _operator) external onlyOwner {
+        require(_operator != address(0) && operators[_operator], "Invalid operator");
+        operators[_operator] = false;
     }
 
     function innerDeposit(Validator memory validator) private {
@@ -286,6 +295,11 @@ contract SLPDeposit is OwnableUpgradeable {
 
     modifier onlySLPCoreOrWithdrawVault() {
         require(msg.sender == slpCore || msg.sender == withdrawVault, "Invalid sender");
+        _;
+    }
+
+    modifier onlyOperator() {
+        require(operators[msg.sender], "Invalid operator");
         _;
     }
 }
