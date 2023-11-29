@@ -299,7 +299,7 @@ contract SLPDeposit is OwnableUpgradeable {
     }
 
     modifier onlyOperator() {
-        require(operators[msg.sender], "Invalid operator");
+        require(operators[msg.sender] || msg.sender == owner(), "Invalid operator");
         _;
     }
 }
