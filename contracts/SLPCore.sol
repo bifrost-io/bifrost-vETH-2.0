@@ -107,7 +107,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit Deposited(msg.sender, tokenAmount, vTokenAmount);
     }
 
-    function renew(uint256 vETH1Amount) external nonReentrant whenNotPaused {
+    function renew(uint256 vETH1Amount) external nonReentrant {
         require(vETH1Amount > 0, "Zero amount");
 
         uint256 tokenAmount = vETH1Amount;
@@ -133,7 +133,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit WithdrawalRequested(msg.sender, tokenAmount, vTokenAmount);
     }
 
-    function withdrawComplete(uint256 tokenAmount) external nonReentrant whenNotPaused {
+    function withdrawComplete(uint256 tokenAmount) external nonReentrant {
         Withdrawal storage withdrawal = withdrawals[msg.sender];
 
         if (tokenAmount == 0) {
@@ -152,7 +152,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit WithdrawalCompleted(msg.sender, tokenAmount);
     }
 
-    function addReward(uint256 amount) external onlyVault {
+    function addReward(uint256 amount) external onlyVault whenNotPaused {
         uint256 tokenFee = (amount * feeRate) / FEE_RATE_DENOMINATOR;
         uint256 vTokenFee = calculateVTokenAmount(tokenFee);
         tokenPool = tokenPool + amount;
@@ -162,7 +162,7 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
         emit RewardAdded(msg.sender, amount, vTokenFee);
     }
 
-    function removeReward(uint256 amount) external onlyVault {
+    function removeReward(uint256 amount) external onlyVault whenNotPaused {
         require(tokenPool > amount, "Insufficient pool amount");
         tokenPool = tokenPool - amount;
 
