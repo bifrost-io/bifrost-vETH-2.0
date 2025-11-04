@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
 interface ISLPCore {
@@ -128,6 +129,10 @@ contract WithdrawalVault is OwnableUpgradeable {
 
     function depositETH() external payable onlySlpDeposit {
         emit EthDeposited(msg.sender, msg.value);
+    }
+
+    function emergencyWithdrawETH(address payable recipient, uint256 amount) external onlyOwner {
+        Address.sendValue(payable(recipient), amount);
     }
 
     /* ========== VIEWS ========== */

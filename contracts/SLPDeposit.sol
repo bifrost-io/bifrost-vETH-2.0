@@ -3,6 +3,7 @@
 
 pragma solidity ^0.8.0;
 
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 // solhint-disable-next-line max-line-length
 import {MerkleProofUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
@@ -138,6 +139,10 @@ contract SLPDeposit is OwnableUpgradeable {
     function setWithdrawVault(address _withdrawVault) external onlyOwner {
         require(_withdrawVault != address(0), "Invalid withdraw vault address");
         withdrawVault = _withdrawVault;
+    }
+
+    function emergencyWithdrawETH(address recipient, uint256 amount) external onlyOwner {
+        Address.sendValue(payable(recipient), amount);
     }
 
     function innerDeposit(Validator memory validator) private {

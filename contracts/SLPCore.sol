@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
@@ -189,6 +190,10 @@ contract SLPCore is OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgr
 
     function unpause() external onlyOwner {
         super._unpause();
+    }
+
+    function emergencyWithdrawETH(address recipient, uint256 amount) external onlyOwner {
+        Address.sendValue(payable(recipient), amount);
     }
 
     function _setFeeRate(uint256 _feeRate) private {
